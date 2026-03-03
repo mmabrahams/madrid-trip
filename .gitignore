@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+data.json
+.DS_Store
+fly.toml
+.claude/
+package.json
