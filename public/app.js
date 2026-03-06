@@ -1007,7 +1007,7 @@ function renderTransport() {
             const info = getDistanceInfo(h.lat, h.lng, coords.lat, coords.lng);
             const recEmoji = info.rec === 'walk' ? '\uD83D\uDEB6' : '\uD83D\uDE97';
             const recText = info.rec === 'walk' ? t('rec_walk', 'Lopen') : t('rec_uber', 'Uber/taxi');
-            const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${h.lat},${h.lng}&destination=${coords.lat},${coords.lng}&travelmode=${info.rec === 'walk' ? 'walking' : 'driving'}`;
+            const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(h.address)}&destination=${coords.lat},${coords.lng}&travelmode=${info.rec === 'walk' ? 'walking' : 'driving'}`;
             return `<div class="hotel-distance">
                 <span class="hotel-distance-name">${esc(h.name)}</span>
                 <div class="distance-details">
