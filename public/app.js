@@ -135,6 +135,10 @@ const ES = {
     cluster_tip: "\u00a1Estas actividades est\u00e1n cerca y se pueden combinar!",
     walking_label: "andando",
     driving_label: "en coche",
+    transport_disclaimer: "Las distancias son estimaciones. Usa el enlace de Google Maps para ver la ruta exacta.",
+    vague_location_warning: "La ubicaci\u00f3n es imprecisa. Las distancias pueden ser incorrectas.",
+    vague_location_tip: "copia la direcci\u00f3n de Google Maps para mayor precisi\u00f3n.",
+    route_link: "Ver ruta en Google Maps",
     // Daypart translations (for dynamic content)
     dayparts: {
         "Ochtend": "Ma\u00f1ana",
@@ -816,6 +820,20 @@ function getHotelsForSuggestion(s) {
     return hotels.length > 0 ? hotels : HOTELS;
 }
 
+function isVagueLocation(loc) {
+    if (!loc) return true;
+    const l = loc.trim().toLowerCase();
+    // Too short to be a real address
+    if (l.length < 10) return true;
+    // No numbers at all (real addresses usually have a street number)
+    if (!/\d/.test(l)) {
+        // Unless it contains a well-known street/place keyword
+        const keywords = ['calle', 'plaza', 'paseo', 'avenida', 'puerta', 'parque', 'estadio', 'mercado', 'museo', 'estación', 'barrio', 'gran vía'];
+        if (!keywords.some(k => l.includes(k))) return true;
+    }
+    return false;
+}
+
 function renderTransport() {
     const hotelsEl = document.getElementById('transport-hotels');
     const listEl = document.getElementById('transport-list');
@@ -837,7 +855,7 @@ function renderTransport() {
                 <p class="hotel-dates">${icons.calendar} ${t('hotel_dates_label', 'Nachten')}: ${dateRange}</p>
             </div>
         </div>`;
-    }).join('');
+    }).join('') + `<p class="transport-disclaimer">${t('transport_disclaimer', 'Afstanden zijn schattingen. Gebruik de Google Maps link voor de exacte route.')}</p>`;
 
     const suggestions = appState.suggestions;
     if (suggestions.length === 0) {
@@ -862,12 +880,15 @@ function renderTransport() {
         const color = COLORS[s.author] || '#888';
         const hotels = getHotelsForSuggestion(s);
 
+        const vague = isVagueLocation(s.location);
+
         if (!coords) {
             return `<div class="transport-card" style="--card-color: ${color}">
                 <div class="transport-card-header">
                     <h4>${esc(ts.title)}</h4>
                     <span class="transport-location">${icons.location} ${esc(ts.location)}</span>
                 </div>
+                ${vague ? `<div class="vague-warning">\u26A0\uFE0F ${t('vague_location_warning', 'Locatie is vaag ingevuld. Afstanden kunnen onnauwkeurig zijn.')} <strong>${esc(s.author)}</strong>, ${t('vague_location_tip', 'kopieer het adres uit Google Maps voor een beter resultaat.')}</div>` : ''}
                 <div class="transport-loading"><span class="spinner"></span> ${t('geocoding', 'Locatie opzoeken...')}</div>
             </div>`;
         }
@@ -876,6 +897,7 @@ function renderTransport() {
             const info = getDistanceInfo(h.lat, h.lng, coords.lat, coords.lng);
             const recEmoji = info.rec === 'walk' ? '\uD83D\uDEB6' : '\uD83D\uDE97';
             const recText = info.rec === 'walk' ? t('rec_walk', 'Lopen') : t('rec_uber', 'Uber/taxi');
+            const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${h.lat},${h.lng}&destination=${coords.lat},${coords.lng}&travelmode=${info.rec === 'walk' ? 'walking' : 'driving'}`;
             return `<div class="hotel-distance">
                 <span class="hotel-distance-name">${esc(h.name)}</span>
                 <div class="distance-details">
@@ -883,6 +905,7 @@ function renderTransport() {
                     <span class="distance-item">\uD83D\uDE97 ${info.driveDist} km \u00b7 ${info.driveMin} min</span>
                     <span class="transport-rec ${info.rec}">${recEmoji} ${recText}</span>
                 </div>
+                <a href="${mapsUrl}" target="_blank" rel="noopener" class="maps-link">\uD83D\uDDFA\uFE0F ${t('route_link', 'Route in Google Maps')}</a>
             </div>`;
         }).join('');
 
@@ -891,6 +914,7 @@ function renderTransport() {
                 <h4>${esc(ts.title)}</h4>
                 <span class="transport-location">${icons.location} ${esc(ts.location)}</span>
             </div>
+            ${vague ? `<div class="vague-warning">\u26A0\uFE0F ${t('vague_location_warning', 'Locatie is vaag ingevuld. Afstanden kunnen onnauwkeurig zijn.')} <strong>${esc(s.author)}</strong>, ${t('vague_location_tip', 'kopieer het adres uit Google Maps voor een beter resultaat.')}</div>` : ''}
             ${hotelRows}
         </div>`;
     }).join('');

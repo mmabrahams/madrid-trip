@@ -1434,6 +1434,38 @@ header h1 {
     font-style: italic;
 }
 
+/* Transport extras */
+.transport-disclaimer {
+    font-size: 0.78rem;
+    color: var(--text-light);
+    text-align: center;
+    padding: 0.5rem 0 0.25rem;
+    font-style: italic;
+}
+
+.vague-warning {
+    background: #FFF8E7;
+    border: 1px solid #F0D68A;
+    border-radius: 8px;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.8rem;
+    color: #8B6914;
+    margin: 0.5rem 0;
+    line-height: 1.4;
+}
+
+.maps-link {
+    display: inline-block;
+    font-size: 0.78rem;
+    color: var(--terracotta);
+    text-decoration: none;
+    margin-top: 0.3rem;
+    font-weight: 500;
+}
+.maps-link:hover {
+    text-decoration: underline;
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 600px) {
     .tab { padding: 0.8rem 0.6rem; font-size: 0.8rem; }
