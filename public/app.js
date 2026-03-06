@@ -55,7 +55,7 @@ const ES = {
     option_evening: "Noche",
     option_allday: "Todo el d\u00eda",
     label_cost: "Coste (por persona)",
-    placeholder_cost: "Ej. \u20ac15 o Gratis",
+    placeholder_cost: "Ej. \u20ac15, Gratis o Var\u00eda",
     btn_cancel: "Cancelar",
     btn_add: "A\u00f1adir",
     btn_close: "Cerrar",
@@ -101,12 +101,14 @@ const ES = {
     label_description: "Descripci\u00f3n",
     placeholder_description: "Cu\u00e9ntanos m\u00e1s sobre esta actividad...",
     link_label: "M\u00e1s info",
+    option_tbd: "Por decidir",
     // Daypart translations (for dynamic content)
     dayparts: {
         "Ochtend": "Ma\u00f1ana",
         "Middag": "Tarde",
         "Avond": "Noche",
-        "Hele dag": "Todo el d\u00eda"
+        "Hele dag": "Todo el d\u00eda",
+        "Nog te beslissen": "Por decidir"
     }
 };
 
