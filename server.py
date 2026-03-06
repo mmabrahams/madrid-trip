@@ -52,7 +52,8 @@ DEFAULT_STATE = {
         }
         for day in DAYS
     },
-    "next_id": 1
+    "next_id": 1,
+    "geocache": {}
 }
 
 state = None
@@ -93,6 +94,9 @@ def load_state():
             state = json.load(f)
     else:
         state = json.loads(json.dumps(DEFAULT_STATE))
+    # Ensure geocache exists
+    if "geocache" not in state:
+        state["geocache"] = {}
     # Ensure all days have notes
     for day in DAYS:
         if day not in state["days"]:
@@ -266,6 +270,13 @@ async def handle_message(websocket, raw):
                     n for n in state["days"][day]["notes"][sid]
                     if n["id"] != note_id
                 ]
+
+    elif action == "update_geocache":
+        location = msg["location"]
+        state["geocache"][location] = {
+            "lat": msg["lat"],
+            "lng": msg["lng"]
+        }
 
     elif action == "remove_from_agenda":
         day = msg["day"]

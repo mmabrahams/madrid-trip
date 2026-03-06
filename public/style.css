@@ -1215,6 +1215,225 @@ header h1 {
     border: 1px solid rgba(196, 78, 58, 0.2);
 }
 
+/* ---------- Transport Tab ---------- */
+#transport-hotels {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.hotel-card {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 1.2rem;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--terracotta);
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    box-shadow: var(--shadow-sm);
+}
+
+.hotel-icon { font-size: 1.5rem; }
+
+.hotel-info h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+}
+
+.hotel-info p {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.hotel-dates { margin-top: 0.15rem; }
+
+#transport-list h3,
+#transport-clusters h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+#transport-list h3 .count,
+#transport-clusters h3 .count {
+    font-size: 0.72rem;
+    background: var(--bg-warm);
+    padding: 0.2rem 0.65rem;
+    border-radius: 50px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+#transport-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+}
+
+.transport-card {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 1.2rem;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--card-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.transport-card-header {
+    margin-bottom: 0.7rem;
+}
+
+.transport-card-header h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+}
+
+.transport-location {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.transport-loading {
+    font-size: 0.82rem;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+}
+
+.spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--terracotta);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.hotel-distance {
+    padding: 0.6rem 0;
+    border-top: 1px solid var(--border-light);
+}
+
+.hotel-distance:first-of-type { border-top: none; }
+
+.hotel-distance-name {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: block;
+    margin-bottom: 0.35rem;
+}
+
+.distance-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.distance-item {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+.transport-rec {
+    padding: 0.2rem 0.6rem;
+    border-radius: 50px;
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.transport-rec.walk {
+    background: var(--success-bg);
+    color: var(--success);
+}
+
+.transport-rec.uber {
+    background: color-mix(in srgb, var(--terracotta) 12%, white);
+    color: var(--terracotta);
+}
+
+/* Clusters */
+.cluster-empty {
+    text-align: center;
+    padding: 1rem;
+    color: var(--text-light);
+    font-size: 0.85rem;
+}
+
+.cluster-group {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 1.2rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+}
+
+.cluster-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.cluster-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    background: color-mix(in srgb, var(--terracotta) 12%, white);
+    color: var(--terracotta);
+    padding: 0.2rem 0.7rem;
+    border-radius: 50px;
+}
+
+.cluster-distance {
+    font-size: 0.75rem;
+    color: var(--text-light);
+}
+
+.cluster-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+}
+
+.cluster-chip {
+    padding: 0.3rem 0.8rem;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    background: color-mix(in srgb, var(--chip-color) 10%, white);
+    border: 1px solid color-mix(in srgb, var(--chip-color) 25%, transparent);
+    color: var(--chip-color);
+}
+
+.cluster-tip {
+    font-size: 0.78rem;
+    color: var(--text-light);
+    font-style: italic;
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 600px) {
     .tab { padding: 0.8rem 0.6rem; font-size: 0.8rem; }
@@ -1230,4 +1449,6 @@ header h1 {
     .tab-content { padding: 1.25rem; }
     .login-header h1 { font-size: 2.5rem; }
     .legend { gap: 0.6rem; }
+    #transport-hotels { grid-template-columns: 1fr; }
+    .distance-details { flex-direction: column; gap: 0.3rem; align-items: flex-start; }
 }

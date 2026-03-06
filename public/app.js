@@ -25,6 +25,21 @@ const DAYS = [
 
 const DAY_TABS = { "day-1": "2026-04-01", "day-2": "2026-04-02", "day-3": "2026-04-03", "day-4": "2026-04-04" };
 
+const HOTELS = [
+    {
+        name: "Calle Preciados",
+        address: "Calle Preciados 27, Madrid 28013",
+        lat: 40.41896, lng: -3.70268,
+        days: ["2026-04-01", "2026-04-02", "2026-04-03"]
+    },
+    {
+        name: "Calle de Muñoz Torrero",
+        address: "Calle de Muñoz Torrero 8, Madrid 28004",
+        lat: 40.42106, lng: -3.69884,
+        days: ["2026-04-03", "2026-04-04"]
+    }
+];
+
 /* ---------- i18n: Spanish translations for Edje ---------- */
 const ES = {
     // Login
@@ -105,6 +120,21 @@ const ES = {
     edit_btn: "Editar",
     edit_suggestion_title: "Editar sugerencia",
     btn_save: "Guardar",
+    // Transport tab
+    tab_transport: "Transporte",
+    transport_title: "Transporte y Distancias",
+    no_transport_data: "Primero a\u00f1ade sugerencias para ver las distancias.",
+    geocoding: "Buscando ubicaci\u00f3n...",
+    rec_walk: "Caminar",
+    rec_uber: "Uber/taxi",
+    hotel_dates_label: "Noches",
+    clusters_title: "Combinar actividades",
+    no_clusters: "No hay actividades cerca para combinar.",
+    cluster_label: "Zona",
+    apart_label: "de distancia",
+    cluster_tip: "\u00a1Estas actividades est\u00e1n cerca y se pueden combinar!",
+    walking_label: "andando",
+    driving_label: "en coche",
     // Daypart translations (for dynamic content)
     dayparts: {
         "Ochtend": "Ma\u00f1ana",
@@ -290,6 +320,8 @@ const icons = {
     trash: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>',
     note: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
     link: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>',
+    walk: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13" cy="4" r="2"/><path d="M7 21l3-7-2.5-1L10 9l4 1 2-6"/><path d="M10 14l-2 7"/></svg>',
+    car: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17m-2 0a2 2 0 104 0 2 2 0 10-4 0"/><path d="M17 17m-2 0a2 2 0 104 0 2 2 0 10-4 0"/><path d="M5 17H3v-6l2-5h9l4 5h1a2 2 0 012 2v4h-2"/><path d="M9 17h6"/></svg>',
 };
 
 /* ---------- Login ---------- */
@@ -346,6 +378,7 @@ document.querySelectorAll('.tab').forEach(tab => {
 function render() {
     if (!appState) return;
     renderSuggestions();
+    renderTransport();
     DAYS.forEach((day, i) => renderDay(day, i));
     // Refresh detail modal if open
     if (openDetailDayKey && openDetailSuggestionId) {
@@ -686,6 +719,229 @@ function removeFromAgenda(dayKey, suggestionId) {
         });
         closeDetail();
     }
+}
+
+/* ---------- Transport & Distances ---------- */
+const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
+let geocodeQueue = [];
+let geocodeRunning = false;
+
+function haversineKm(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function getDistanceInfo(hotelLat, hotelLng, destLat, destLng) {
+    const straight = haversineKm(hotelLat, hotelLng, destLat, destLng);
+    const walkDist = straight * 1.3;
+    const driveDist = straight * 1.4;
+    const walkMin = Math.round((walkDist / 5) * 60);
+    const driveMin = Math.max(Math.round((driveDist / 20) * 60), 3);
+    return {
+        walkDist: walkDist.toFixed(1),
+        walkMin,
+        driveDist: driveDist.toFixed(1),
+        driveMin,
+        rec: walkMin <= 20 ? 'walk' : 'uber'
+    };
+}
+
+async function geocodeLocation(locationStr) {
+    if (appState.geocache && appState.geocache[locationStr]) {
+        return appState.geocache[locationStr];
+    }
+    let query = locationStr;
+    if (!query.toLowerCase().includes('madrid')) query += ', Madrid, Spain';
+    try {
+        const resp = await fetch(`${NOMINATIM_URL}?q=${encodeURIComponent(query)}&format=json&limit=1`);
+        const data = await resp.json();
+        if (data.length > 0) {
+            const result = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+            send({ action: "update_geocache", location: locationStr, lat: result.lat, lng: result.lng });
+            return result;
+        }
+    } catch (e) { /* ignore */ }
+    return null;
+}
+
+async function processGeocodeQueue() {
+    if (geocodeRunning) return;
+    geocodeRunning = true;
+    while (geocodeQueue.length > 0) {
+        const { loc, resolve } = geocodeQueue.shift();
+        if (appState.geocache && appState.geocache[loc]) {
+            resolve(appState.geocache[loc]);
+        } else {
+            const result = await geocodeLocation(loc);
+            resolve(result);
+            await new Promise(r => setTimeout(r, 1100));
+        }
+    }
+    geocodeRunning = false;
+}
+
+function queueGeocode(loc) {
+    if (appState.geocache && appState.geocache[loc]) return Promise.resolve(appState.geocache[loc]);
+    return new Promise(resolve => {
+        geocodeQueue.push({ loc, resolve });
+        processGeocodeQueue();
+    });
+}
+
+function getHotelsForSuggestion(s) {
+    const assignedDays = [];
+    for (const day of DAYS) {
+        const dd = appState.days[day.key];
+        if (!dd) continue;
+        if (dd.agenda.some(a => a.id === s.id) || dd.proposals.some(p => p.suggestion_id === s.id)) {
+            assignedDays.push(day.key);
+        }
+    }
+    if (assignedDays.length === 0) return HOTELS;
+    const seen = new Set();
+    const hotels = [];
+    for (const dk of assignedDays) {
+        for (const h of HOTELS) {
+            if (h.days.includes(dk) && !seen.has(h.name)) {
+                seen.add(h.name);
+                hotels.push(h);
+            }
+        }
+    }
+    return hotels.length > 0 ? hotels : HOTELS;
+}
+
+function renderTransport() {
+    const hotelsEl = document.getElementById('transport-hotels');
+    const listEl = document.getElementById('transport-list');
+    const clustersEl = document.getElementById('transport-clusters');
+    if (!hotelsEl) return;
+
+    // Hotel cards
+    hotelsEl.innerHTML = HOTELS.map(h => {
+        const dateRange = h.days.map(d => {
+            const dayObj = DAYS.find(dd => dd.key === d);
+            return dayObj ? dayObj.short : d;
+        }).join(', ');
+        return `
+        <div class="hotel-card">
+            <div class="hotel-icon">\uD83C\uDFE8</div>
+            <div class="hotel-info">
+                <h4>${esc(h.name)}</h4>
+                <p>${icons.location} ${esc(h.address)}</p>
+                <p class="hotel-dates">${icons.calendar} ${t('hotel_dates_label', 'Nachten')}: ${dateRange}</p>
+            </div>
+        </div>`;
+    }).join('');
+
+    const suggestions = appState.suggestions;
+    if (suggestions.length === 0) {
+        listEl.innerHTML = `<div class="empty-state"><p>${t('no_transport_data', 'Voeg eerst suggesties toe om afstanden te bekijken.')}</p></div>`;
+        clustersEl.innerHTML = '';
+        return;
+    }
+
+    // Build cards
+    const geocoded = [];
+    for (const s of suggestions) {
+        const coords = appState.geocache?.[s.location];
+        geocoded.push({ suggestion: s, coords: coords || null });
+        if (!coords) {
+            queueGeocode(s.location).then(() => renderTransport());
+        }
+    }
+
+    listEl.innerHTML = '<h3>' + t('transport_title', 'Transport & Afstanden') + '</h3>' +
+        geocoded.map(({ suggestion: s, coords }) => {
+        const ts = tSuggestion(s);
+        const color = COLORS[s.author] || '#888';
+        const hotels = getHotelsForSuggestion(s);
+
+        if (!coords) {
+            return `<div class="transport-card" style="--card-color: ${color}">
+                <div class="transport-card-header">
+                    <h4>${esc(ts.title)}</h4>
+                    <span class="transport-location">${icons.location} ${esc(ts.location)}</span>
+                </div>
+                <div class="transport-loading"><span class="spinner"></span> ${t('geocoding', 'Locatie opzoeken...')}</div>
+            </div>`;
+        }
+
+        const hotelRows = hotels.map(h => {
+            const info = getDistanceInfo(h.lat, h.lng, coords.lat, coords.lng);
+            const recEmoji = info.rec === 'walk' ? '\uD83D\uDEB6' : '\uD83D\uDE97';
+            const recText = info.rec === 'walk' ? t('rec_walk', 'Lopen') : t('rec_uber', 'Uber/taxi');
+            return `<div class="hotel-distance">
+                <span class="hotel-distance-name">${esc(h.name)}</span>
+                <div class="distance-details">
+                    <span class="distance-item">\uD83D\uDEB6 ${info.walkDist} km \u00b7 ${info.walkMin} min</span>
+                    <span class="distance-item">\uD83D\uDE97 ${info.driveDist} km \u00b7 ${info.driveMin} min</span>
+                    <span class="transport-rec ${info.rec}">${recEmoji} ${recText}</span>
+                </div>
+            </div>`;
+        }).join('');
+
+        return `<div class="transport-card" style="--card-color: ${color}">
+            <div class="transport-card-header">
+                <h4>${esc(ts.title)}</h4>
+                <span class="transport-location">${icons.location} ${esc(ts.location)}</span>
+            </div>
+            ${hotelRows}
+        </div>`;
+    }).join('');
+
+    // Clusters
+    renderClusters(geocoded.filter(g => g.coords), clustersEl);
+}
+
+function renderClusters(items, container) {
+    if (items.length < 2) { container.innerHTML = ''; return; }
+    const RADIUS = 0.5;
+    const clusters = [];
+    const used = new Set();
+    for (let i = 0; i < items.length; i++) {
+        if (used.has(i)) continue;
+        const cluster = [items[i]];
+        used.add(i);
+        for (let j = i + 1; j < items.length; j++) {
+            if (used.has(j)) continue;
+            const d = haversineKm(items[i].coords.lat, items[i].coords.lng, items[j].coords.lat, items[j].coords.lng);
+            if (d <= RADIUS) { cluster.push(items[j]); used.add(j); }
+        }
+        if (cluster.length >= 2) clusters.push(cluster);
+    }
+    if (clusters.length === 0) {
+        container.innerHTML = `<p class="cluster-empty">${t('no_clusters', 'Geen activiteiten dicht genoeg bij elkaar om te combineren.')}</p>`;
+        return;
+    }
+    container.innerHTML = `<h3>${t('clusters_title', 'Combineer activiteiten')} <span class="count">${clusters.length}</span></h3>` +
+        clusters.map((cluster, ci) => {
+            const chips = cluster.map(({ suggestion: s }) => {
+                const ts = tSuggestion(s);
+                const color = COLORS[s.author] || '#888';
+                return `<span class="cluster-chip" style="--chip-color: ${color}">${esc(ts.title)}</span>`;
+            }).join('');
+            let maxDist = 0;
+            for (let a = 0; a < cluster.length; a++) {
+                for (let b = a + 1; b < cluster.length; b++) {
+                    const d = haversineKm(cluster[a].coords.lat, cluster[a].coords.lng, cluster[b].coords.lat, cluster[b].coords.lng);
+                    if (d > maxDist) maxDist = d;
+                }
+            }
+            return `<div class="cluster-group">
+                <div class="cluster-header">
+                    <span class="cluster-badge">${t('cluster_label', 'Buurt')} ${ci + 1}</span>
+                    <span class="cluster-distance">~${Math.round(maxDist * 1000)}m ${t('apart_label', 'uit elkaar')}</span>
+                </div>
+                <div class="cluster-items">${chips}</div>
+                <p class="cluster-tip">${t('cluster_tip', 'Deze activiteiten liggen dicht bij elkaar en kun je goed combineren!')}</p>
+            </div>`;
+        }).join('');
 }
 
 /* ---------- Calendar Export ---------- */
