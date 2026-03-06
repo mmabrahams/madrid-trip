@@ -102,6 +102,9 @@ const ES = {
     placeholder_description: "Cu\u00e9ntanos m\u00e1s sobre esta actividad...",
     link_label: "M\u00e1s info",
     option_tbd: "Por decidir",
+    edit_btn: "Editar",
+    edit_suggestion_title: "Editar sugerencia",
+    btn_save: "Guardar",
     // Daypart translations (for dynamic content)
     dayparts: {
         "Ochtend": "Ma\u00f1ana",
@@ -219,6 +222,7 @@ let ws = null;
 let reconnectTimer = null;
 let openDetailDayKey = null;
 let openDetailSuggestionId = null;
+let editingSuggestionId = null;
 
 /* ---------- WebSocket ---------- */
 function connect() {
@@ -381,6 +385,7 @@ function renderSuggestions() {
             ${ts.description ? `<p class="suggestion-description">${esc(ts.description)}</p>` : ''}
             ${s.author === currentUser ? `
             <div class="card-actions">
+                <button class="btn btn-sm btn-edit" onclick="editSuggestion(${s.id})">${t('edit_btn', 'Bewerken')}</button>
                 <button class="btn btn-sm btn-danger" onclick="deleteSuggestion(${s.id})">${t('delete_btn', 'Verwijderen')}</button>
             </div>` : ''}
         </div>`;
@@ -507,6 +512,24 @@ function deleteSuggestion(id) {
     if (confirm(t('confirm_delete', 'Weet je zeker dat je deze suggestie wilt verwijderen?'))) {
         send({ action: "delete_suggestion", id: id });
     }
+}
+
+function editSuggestion(id) {
+    const s = appState.suggestions.find(s => s.id === id);
+    if (!s) return;
+    editingSuggestionId = id;
+    document.getElementById('s-title').value = s.title || '';
+    document.getElementById('s-location').value = s.location || '';
+    document.getElementById('s-duration').value = s.duration || '';
+    document.getElementById('s-daypart').value = s.daypart || '';
+    document.getElementById('s-cost').value = s.cost || '';
+    document.getElementById('s-link').value = s.link || '';
+    document.getElementById('s-description').value = s.description || '';
+    // Update modal title and button
+    document.querySelector('#suggestion-modal h2').textContent = t('edit_suggestion_title', 'Suggestie bewerken');
+    document.querySelector('#suggestion-form .btn-primary').textContent = t('btn_save', 'Opslaan');
+    document.getElementById('suggestion-modal').classList.add('active');
+    document.getElementById('s-title').focus();
 }
 
 function vote(day, proposalId, accept) {
@@ -797,14 +820,25 @@ function proposeForDay(suggestionId) {
 }
 
 /* ---------- Suggestion Modal ---------- */
+function closeSuggestionModal() {
+    editingSuggestionId = null;
+    document.getElementById('suggestion-modal').classList.remove('active');
+    document.getElementById('suggestion-form').reset();
+    // Reset title and button to "add" mode
+    document.querySelector('#suggestion-modal h2').textContent = t('new_suggestion_title', 'Nieuwe suggestie');
+    document.querySelector('#suggestion-form .btn-primary').textContent = t('btn_add', 'Toevoegen');
+}
+
 document.getElementById('add-suggestion-btn').addEventListener('click', () => {
+    editingSuggestionId = null;
+    document.querySelector('#suggestion-modal h2').textContent = t('new_suggestion_title', 'Nieuwe suggestie');
+    document.querySelector('#suggestion-form .btn-primary').textContent = t('btn_add', 'Toevoegen');
     document.getElementById('suggestion-modal').classList.add('active');
     document.getElementById('s-title').focus();
 });
 
 document.getElementById('cancel-suggestion').addEventListener('click', () => {
-    document.getElementById('suggestion-modal').classList.remove('active');
-    document.getElementById('suggestion-form').reset();
+    closeSuggestionModal();
 });
 
 document.getElementById('cancel-day-add').addEventListener('click', () => {
@@ -830,8 +864,7 @@ document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
 
 document.getElementById('suggestion-form').addEventListener('submit', (e) => {
     e.preventDefault();
-    send({
-        action: "add_suggestion",
+    const data = {
         title: document.getElementById('s-title').value.trim(),
         location: document.getElementById('s-location').value.trim(),
         duration: document.getElementById('s-duration').value.trim(),
@@ -839,10 +872,13 @@ document.getElementById('suggestion-form').addEventListener('submit', (e) => {
         cost: document.getElementById('s-cost').value.trim(),
         link: document.getElementById('s-link').value.trim(),
         description: document.getElementById('s-description').value.trim(),
-        author: currentUser
-    });
-    document.getElementById('suggestion-modal').classList.remove('active');
-    document.getElementById('suggestion-form').reset();
+    };
+    if (editingSuggestionId) {
+        send({ action: "edit_suggestion", id: editingSuggestionId, requester: currentUser, ...data });
+    } else {
+        send({ action: "add_suggestion", ...data, author: currentUser });
+    }
+    closeSuggestionModal();
 });
 
 /* ---------- Utility ---------- */

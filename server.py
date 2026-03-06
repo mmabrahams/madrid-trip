@@ -21,6 +21,18 @@ except ImportError:
     from websockets.http11 import Response
     from websockets.datastructures import Headers
 
+# Optional PostgreSQL support for persistent storage
+DATABASE_URL = os.environ.get("DATABASE_URL")
+pg_conn = None
+
+if DATABASE_URL:
+    try:
+        import psycopg2
+    except ImportError:
+        import subprocess
+        subprocess.check_call(["pip3", "install", "psycopg2-binary"])
+        import psycopg2
+
 # ---------- Config ----------
 PORT = int(os.environ.get("PORT", 8080))
 DATA_DIR = os.environ.get("DATA_DIR", os.path.dirname(os.path.abspath(__file__)))
@@ -48,23 +60,65 @@ connected_clients = set()
 
 
 # ---------- State Management ----------
+def init_db():
+    """Initialize PostgreSQL table if DATABASE_URL is set."""
+    global pg_conn
+    if not DATABASE_URL:
+        return
+    pg_conn = psycopg2.connect(DATABASE_URL)
+    pg_conn.autocommit = True
+    with pg_conn.cursor() as cur:
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS app_state (
+                id INTEGER PRIMARY KEY DEFAULT 1,
+                data JSONB NOT NULL,
+                CHECK (id = 1)
+            )
+        """)
+
+
 def load_state():
     global state
-    if os.path.exists(DATA_FILE):
+    if DATABASE_URL and pg_conn:
+        with pg_conn.cursor() as cur:
+            cur.execute("SELECT data FROM app_state WHERE id = 1")
+            row = cur.fetchone()
+            if row:
+                state = row[0]
+            else:
+                state = json.loads(json.dumps(DEFAULT_STATE))
+                cur.execute("INSERT INTO app_state (id, data) VALUES (1, %s)", [json.dumps(state)])
+    elif os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r") as f:
             state = json.load(f)
-        for day in DAYS:
-            if day not in state["days"]:
-                state["days"][day] = {"proposals": [], "agenda": [], "notes": {}}
-            if "notes" not in state["days"][day]:
-                state["days"][day]["notes"] = {}
     else:
         state = json.loads(json.dumps(DEFAULT_STATE))
+    # Ensure all days have notes
+    for day in DAYS:
+        if day not in state["days"]:
+            state["days"][day] = {"proposals": [], "agenda": [], "notes": {}}
+        if "notes" not in state["days"][day]:
+            state["days"][day]["notes"] = {}
 
 
 def save_state():
-    with open(DATA_FILE, "w") as f:
-        json.dump(state, f, indent=2, ensure_ascii=False)
+    global pg_conn
+    if DATABASE_URL and pg_conn:
+        try:
+            with pg_conn.cursor() as cur:
+                cur.execute("UPDATE app_state SET data = %s WHERE id = 1", [json.dumps(state, ensure_ascii=False)])
+        except Exception:
+            # Reconnect on connection loss
+            try:
+                pg_conn = psycopg2.connect(DATABASE_URL)
+                pg_conn.autocommit = True
+                with pg_conn.cursor() as cur:
+                    cur.execute("UPDATE app_state SET data = %s WHERE id = 1", [json.dumps(state, ensure_ascii=False)])
+            except Exception as e:
+                print(f"DB save failed: {e}")
+    else:
+        with open(DATA_FILE, "w") as f:
+            json.dump(state, f, indent=2, ensure_ascii=False)
 
 
 def broadcast_state():
@@ -102,6 +156,23 @@ async def handle_message(websocket, raw):
         }
         state["next_id"] += 1
         state["suggestions"].append(suggestion)
+
+    elif action == "edit_suggestion":
+        sid = msg["id"]
+        requester = msg["requester"]
+        suggestion = next((s for s in state["suggestions"] if s["id"] == sid), None)
+        if suggestion and suggestion.get("author") == requester:
+            for field in ["title", "location", "duration", "daypart", "cost", "link", "description"]:
+                if field in msg:
+                    suggestion[field] = msg[field]
+            # Also update copies in proposals and agenda
+            for day in DAYS:
+                for proposal in state["days"][day]["proposals"]:
+                    if proposal["suggestion_id"] == sid:
+                        proposal["suggestion"] = dict(suggestion)
+                for i, a in enumerate(state["days"][day]["agenda"]):
+                    if a["id"] == sid:
+                        state["days"][day]["agenda"][i] = dict(suggestion)
 
     elif action == "delete_suggestion":
         sid = msg["id"]
@@ -269,6 +340,7 @@ async def process_request(connection, request):
 
 # ---------- Main ----------
 async def main():
+    init_db()
     load_state()
     print("=" * 50)
     print("  Madrid Trip Planner")

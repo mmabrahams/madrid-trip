@@ -379,6 +379,13 @@ header h1 {
 }
 .btn-reject:hover { background: rgba(196, 78, 58, 0.14); }
 
+.btn-edit {
+    background: var(--bg-warm);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+.btn-edit:hover { background: var(--border); color: var(--text); }
+
 .btn-danger {
     background: var(--danger-bg);
     color: var(--danger);
