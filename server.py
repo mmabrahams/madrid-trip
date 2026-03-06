@@ -197,9 +197,16 @@ async def handle_message(websocket, raw):
     elif action == "remove_from_agenda":
         day = msg["day"]
         sid = msg["suggestion_id"]
-        state["days"][day]["agenda"] = [
-            a for a in state["days"][day]["agenda"] if a["id"] != sid
-        ]
+        requester = msg["requester"]
+        agenda_item = next((a for a in state["days"][day]["agenda"] if a["id"] == sid), None)
+        if agenda_item and agenda_item.get("author") == requester:
+            state["days"][day]["agenda"] = [
+                a for a in state["days"][day]["agenda"] if a["id"] != sid
+            ]
+            # Clean up notes for removed item
+            sid_str = str(sid)
+            if sid_str in state["days"][day]["notes"]:
+                del state["days"][day]["notes"][sid_str]
 
     elif action == "reset":
         state.clear()

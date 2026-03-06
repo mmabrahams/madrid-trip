@@ -93,6 +93,8 @@ const ES = {
     note_placeholder: "Escribe una nota...",
     btn_add_note: "A\u00f1adir",
     btn_delete_note: "Eliminar",
+    btn_remove_agenda: "Eliminar de la agenda",
+    confirm_remove_agenda: "\u00bfEst\u00e1s seguro de que quieres eliminar esta actividad de la agenda?",
     // Daypart translations (for dynamic content)
     dayparts: {
         "Ochtend": "Ma\u00f1ana",
@@ -595,6 +597,9 @@ function renderDetailBody(dayKey, suggestionId) {
                 <button class="btn btn-primary btn-sm" onclick="addNote('${dayKey}', ${suggestionId})">${t('btn_add_note', 'Toevoegen')}</button>
             </div>
         </div>
+        ${isAuthor ? `<div class="detail-remove-row">
+            <button class="btn-remove-agenda" onclick="removeFromAgenda('${dayKey}', ${item.id})">${t('btn_remove_agenda', 'Verwijder uit agenda')}</button>
+        </div>` : ''}
     `;
 
     document.getElementById('detail-body').innerHTML = html;
@@ -632,6 +637,18 @@ function deleteNote(dayKey, suggestionId, noteId) {
         note_id: noteId,
         requester: currentUser
     });
+}
+
+function removeFromAgenda(dayKey, suggestionId) {
+    if (confirm(t('confirm_remove_agenda', 'Weet je zeker dat je deze activiteit uit de agenda wilt verwijderen?'))) {
+        send({
+            action: "remove_from_agenda",
+            day: dayKey,
+            suggestion_id: suggestionId,
+            requester: currentUser
+        });
+        closeDetail();
+    }
 }
 
 /* ---------- Calendar Export ---------- */
