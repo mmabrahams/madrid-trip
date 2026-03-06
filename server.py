@@ -95,6 +95,8 @@ async def handle_message(websocket, raw):
             "duration": msg["duration"],
             "daypart": msg["daypart"],
             "cost": msg["cost"],
+            "link": msg.get("link", ""),
+            "description": msg.get("description", ""),
             "author": msg["author"],
             "created": datetime.now().isoformat()
         }

@@ -462,6 +462,25 @@ header h1 {
     gap: 0.5rem;
 }
 
+.suggestion-meta .meta-link a {
+    color: var(--terracotta);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.suggestion-meta .meta-link a:hover {
+    text-decoration: underline;
+}
+
+.suggestion-description {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-top: 0.3rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border-light);
+}
+
 .suggestion-meta svg {
     width: 14px;
     height: 14px;
@@ -714,7 +733,8 @@ header h1 {
 }
 
 .form-group input,
-.form-group select {
+.form-group select,
+.form-group textarea {
     width: 100%;
     padding: 0.75rem 1rem;
     background: var(--bg);
@@ -724,16 +744,30 @@ header h1 {
     font-size: 0.95rem;
     font-family: inherit;
     transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 70px;
 }
 
 .form-group input:focus,
-.form-group select:focus {
+.form-group select:focus,
+.form-group textarea:focus {
     outline: none;
     border-color: var(--terracotta);
     box-shadow: 0 0 0 3px rgba(196, 97, 58, 0.1);
 }
 
-.form-group input::placeholder {
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: var(--text-light);
+}
+
+.label-optional {
+    font-weight: 400;
+    font-size: 0.8rem;
     color: var(--text-light);
 }
 
@@ -934,6 +968,38 @@ header h1 {
 .btn-calendar-detail svg {
     width: 14px;
     height: 14px;
+}
+
+.detail-link {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    margin-top: 0.4rem;
+}
+
+.detail-link a {
+    color: var(--terracotta);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.detail-link a:hover {
+    text-decoration: underline;
+}
+
+.detail-link svg {
+    opacity: 0.5;
+}
+
+.detail-description {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    line-height: 1.55;
+    margin-top: 0.6rem;
+    padding: 0.7rem 0.9rem;
+    background: var(--cream);
+    border-radius: var(--radius-md);
 }
 
 .detail-remove-row {
