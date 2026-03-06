@@ -27,7 +27,7 @@ DATA_DIR = os.environ.get("DATA_DIR", os.path.dirname(os.path.abspath(__file__))
 DATA_FILE = os.path.join(DATA_DIR, "data.json")
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "public")
 
-PARTICIPANTS = ["Edje", "Maxime", "El Sierd", "Miqi", "Koen"]
+PARTICIPANTS = ["Edje", "Maxime", "El Sierd", "Miqi", "Koen", "Bart"]
 DAYS = ["2026-04-01", "2026-04-02", "2026-04-03", "2026-04-04"]
 
 DEFAULT_STATE = {

@@ -1,18 +1,20 @@
 /* ---------- Config ---------- */
-const PARTICIPANTS = ["Edje", "Maxime", "El Sierd", "Miqi", "Koen"];
+const PARTICIPANTS = ["Edje", "Maxime", "El Sierd", "Miqi", "Koen", "Bart"];
 const COLORS = {
     "Edje": "#C4613A",
     "Maxime": "#3A8F85",
     "El Sierd": "#C69C4E",
     "Miqi": "#6B5BAD",
-    "Koen": "#D08B4A"
+    "Koen": "#D08B4A",
+    "Bart": "#4A90A4"
 };
 const INITIALS = {
     "Edje": "E",
     "Maxime": "M",
     "El Sierd": "S",
     "Miqi": "Q",
-    "Koen": "K"
+    "Koen": "K",
+    "Bart": "B"
 };
 const DAYS = [
     { key: "2026-04-01", label: "Woensdag 1 april", short: "1 apr" },
