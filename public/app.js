@@ -139,6 +139,29 @@ const ES = {
     vague_location_warning: "La ubicaci\u00f3n es imprecisa. Las distancias pueden ser incorrectas.",
     vague_location_tip: "copia la direcci\u00f3n de Google Maps para mayor precisi\u00f3n.",
     route_link: "Ver ruta en Google Maps",
+    // Login
+    login_subtitle: "Elige tu nombre para empezar",
+    // Help
+    help_title: "Ayuda",
+    help_welcome_title: "Bienvenido a Madrid 2026",
+    help_welcome_text: "Esta app nos ayuda a planificar juntos el viaje a Madrid. Todos pueden sugerir actividades, votar y ver la agenda. A continuaci\u00f3n te explicamos c\u00f3mo funciona.",
+    help_suggestions_title: "Sugerencias",
+    help_suggestions_text: "Ve a la pesta\u00f1a <strong>Sugerencias</strong> y pulsa <strong>+ Nueva sugerencia</strong>. Rellena el nombre, ubicaci\u00f3n, duraci\u00f3n, momento del d\u00eda y coste. Tambi\u00e9n puedes a\u00f1adir un enlace y descripci\u00f3n. Reconoces tus sugerencias por el punto de color con tu inicial. Solo t\u00fa puedes editar o eliminar tus propias sugerencias.",
+    help_voting_title: "Votaci\u00f3n",
+    help_voting_text: "Abre una pesta\u00f1a de d\u00eda (D\u00eda 1-4) y pulsa <strong>+ Proponer actividad</strong>. Elige una sugerencia de la lista. Ahora aparece una propuesta en la que todos pueden votar. Los 6 deben aceptar para que la actividad se confirme. Si alguien rechaza, la propuesta se rechaza. Puedes anular tu voto si cambias de opini\u00f3n.",
+    help_agenda_title: "Agenda y Notas",
+    help_agenda_text: "Las actividades confirmadas aparecen en la secci\u00f3n <strong>Agenda</strong> de cada d\u00eda. Haz clic en un elemento de la agenda para ver los detalles. All\u00ed puedes a\u00f1adir notas (por ejemplo, horarios de reserva, consejos). Con el icono del calendario puedes exportar la actividad a tu agenda del tel\u00e9fono.",
+    help_transport_title: "Transporte",
+    help_transport_text: "La pesta\u00f1a <strong>Transporte</strong> muestra la distancia desde nuestros hoteles a cada actividad. Ves tiempos a pie y en coche con una recomendaci\u00f3n (caminar o Uber). Pulsa <strong>Ruta en Google Maps</strong> para la ruta exacta. Abajo ves qu\u00e9 actividades est\u00e1n cerca y se pueden combinar.",
+    // Tips
+    tip_suggestions: "Todos pueden a\u00f1adir sugerencias. Puedes editar o eliminar las tuyas.",
+    tip_day: "Propone actividades y vota con todos. Pulsa en un elemento de la agenda para ver detalles y notas.",
+    tip_transport: "Las distancias son estimaciones. A\u00f1ade una direcci\u00f3n exacta en tu sugerencia para mejores resultados.",
+    // Empty states
+    no_suggestions_title: "A\u00fan no hay sugerencias",
+    no_suggestions_subtitle: "Pulsa el bot\u00f3n de arriba para proponer una actividad que te gustar\u00eda hacer en Madrid.",
+    no_agenda_title: "A\u00fan no hay agenda",
+    no_agenda_subtitle: "Propone una actividad con el bot\u00f3n de arriba. Si todos est\u00e1n de acuerdo, aparecer\u00e1 aqu\u00ed.",
     // Daypart translations (for dynamic content)
     dayparts: {
         "Ochtend": "Ma\u00f1ana",
@@ -326,6 +349,10 @@ const icons = {
     link: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>',
     walk: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13" cy="4" r="2"/><path d="M7 21l3-7-2.5-1L10 9l4 1 2-6"/><path d="M10 14l-2 7"/></svg>',
     car: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17m-2 0a2 2 0 104 0 2 2 0 10-4 0"/><path d="M17 17m-2 0a2 2 0 104 0 2 2 0 10-4 0"/><path d="M5 17H3v-6l2-5h9l4 5h1a2 2 0 012 2v4h-2"/><path d="M9 17h6"/></svg>',
+    lightbulb: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>',
+    users: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
+    layers: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>',
+    compass: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>',
 };
 
 /* ---------- Login ---------- */
@@ -359,6 +386,77 @@ function showApp() {
     applyStaticTranslations();
 
     connect();
+
+    // Auto-show help on first visit
+    if (!localStorage.getItem('madrid-help-seen')) {
+        localStorage.setItem('madrid-help-seen', '1');
+        setTimeout(() => { renderHelp(); document.getElementById('help-modal').classList.add('active'); }, 600);
+    }
+}
+
+/* ---------- Help Modal ---------- */
+document.getElementById('help-btn').addEventListener('click', () => {
+    renderHelp();
+    document.getElementById('help-modal').classList.add('active');
+});
+
+document.getElementById('close-help').addEventListener('click', () => {
+    document.getElementById('help-modal').classList.remove('active');
+});
+
+function renderHelp() {
+    const sections = [
+        {
+            icon: icons.lightbulb,
+            title: t('help_welcome_title', 'Welkom bij Madrid 2026'),
+            content: t('help_welcome_text', 'Deze app helpt ons om samen de Madrid-trip te plannen. Iedereen kan activiteiten voorstellen, stemmen en de agenda bekijken. Hieronder leggen we uit hoe alles werkt.'),
+            cssClass: 'help-welcome'
+        },
+        {
+            icon: icons.layers,
+            title: t('help_suggestions_title', 'Suggesties'),
+            content: t('help_suggestions_text', 'Ga naar het tabblad <strong>Suggesties</strong> en klik op <strong>+ Nieuwe suggestie</strong>. Vul de naam, locatie, duur, dagdeel en kosten in. Je kunt ook een link en beschrijving toevoegen. Jouw suggesties herken je aan het gekleurde bolletje met jouw initiaal. Alleen jij kunt je eigen suggesties bewerken of verwijderen.')
+        },
+        {
+            icon: icons.users,
+            title: t('help_voting_title', 'Stemmen'),
+            content: t('help_voting_text', 'Open een dag-tab (Dag 1-4) en klik op <strong>+ Activiteit voorstellen</strong>. Kies een suggestie uit de lijst. Nu verschijnt een voorstel waarop iedereen kan stemmen. Alle 6 moeten accepteren voordat de activiteit wordt bevestigd. Als iemand afwijst, wordt het voorstel afgewezen. Je kunt je stem ook herroepen.')
+        },
+        {
+            icon: icons.note,
+            title: t('help_agenda_title', 'Agenda & Notities'),
+            content: t('help_agenda_text', 'Bevestigde activiteiten verschijnen in de <strong>Agenda</strong> sectie van elke dag. Klik op een agenda-item voor details. Daar kun je notities toevoegen (bijv. reserveringstijden, tips). Met het kalender-icoontje exporteer je de activiteit naar je telefoon-agenda.')
+        },
+        {
+            icon: icons.compass,
+            title: t('help_transport_title', 'Vervoer'),
+            content: t('help_transport_text', 'Het tabblad <strong>Vervoer</strong> toont de afstand van onze hotels naar elke activiteit. Je ziet loop- en rijtijden met een aanbeveling (lopen of Uber). Klik op <strong>Route in Google Maps</strong> voor de exacte route. Onderaan zie je welke activiteiten dicht bij elkaar liggen en gecombineerd kunnen worden.')
+        }
+    ];
+
+    document.getElementById('help-body').innerHTML = sections.map(s => `
+        <div class="help-section ${s.cssClass || ''}">
+            <div class="help-section-icon">${s.icon}</div>
+            <h3>${s.title}</h3>
+            <div class="help-section-content">${s.content}</div>
+        </div>
+    `).join('');
+}
+
+/* ---------- Inline Tips ---------- */
+function renderTip(key, text) {
+    if (localStorage.getItem('madrid-tip-' + key)) return '';
+    return `<div id="tip-${key}" class="inline-tip">
+        <span class="inline-tip-icon">${icons.lightbulb}</span>
+        <span>${text}</span>
+        <button class="inline-tip-dismiss" onclick="dismissTip('${key}')">&times;</button>
+    </div>`;
+}
+
+function dismissTip(key) {
+    localStorage.setItem('madrid-tip-' + key, '1');
+    const el = document.getElementById('tip-' + key);
+    if (el) el.remove();
 }
 
 // Auto-login
@@ -398,11 +496,17 @@ function renderSuggestions() {
     if (suggestions.length === 0) {
         list.innerHTML = '';
         empty.style.display = 'block';
+        empty.innerHTML = `
+            <div class="empty-illustration">${icons.lightbulb}</div>
+            <p class="empty-title">${t('no_suggestions_title', 'Nog geen suggesties')}</p>
+            <p class="empty-subtitle">${t('no_suggestions_subtitle', 'Klik op de knop hierboven om een activiteit voor te stellen die je graag wilt doen in Madrid.')}</p>
+        `;
         return;
     }
 
     empty.style.display = 'none';
-    list.innerHTML = suggestions.map(s => {
+    const tip = renderTip('suggestions', t('tip_suggestions', 'Iedereen kan suggesties toevoegen. Jouw suggesties kun je bewerken of verwijderen.'));
+    list.innerHTML = tip + suggestions.map(s => {
         const ts = tSuggestion(s);
         const color = COLORS[s.author] || '#888';
         const initial = INITIALS[s.author] || '?';
@@ -442,6 +546,7 @@ function renderDay(day, index) {
             <h2>${tDayLabel(day.key, day.label)}</h2>
             <button class="btn btn-primary" onclick="openDayAddModal('${day.key}')">${t('propose_btn', '+ Activiteit voorstellen')}</button>
         </div>
+        ${renderTip('day', t('tip_day', 'Stel activiteiten voor en stem met z\'n allen. Klik op een agenda-item voor details en notities.'))}
     `;
 
     // Agenda section
@@ -449,7 +554,11 @@ function renderDay(day, index) {
         <h3>${t('agenda_title', 'Agenda')} <span class="count">${agenda.length}</span></h3>`;
 
     if (agenda.length === 0) {
-        html += `<div class="empty-state"><p>${t('no_agenda', 'Nog geen bevestigde activiteiten voor deze dag.')}</p></div>`;
+        html += `<div class="empty-state empty-state-guided">
+            <div class="empty-illustration">${icons.calendar}</div>
+            <p class="empty-title">${t('no_agenda_title', 'Nog geen agenda')}</p>
+            <p class="empty-subtitle">${t('no_agenda_subtitle', 'Stel een activiteit voor via de knop hierboven. Als iedereen akkoord gaat, verschijnt het hier.')}</p>
+        </div>`;
     } else {
         html += agenda.map(a => {
             const ta = tSuggestion(a);
@@ -855,7 +964,8 @@ function renderTransport() {
                 <p class="hotel-dates">${icons.calendar} ${t('hotel_dates_label', 'Nachten')}: ${dateRange}</p>
             </div>
         </div>`;
-    }).join('') + `<p class="transport-disclaimer">${t('transport_disclaimer', 'Afstanden zijn schattingen. Gebruik de Google Maps link voor de exacte route.')}</p>`;
+    }).join('') + `<p class="transport-disclaimer">${t('transport_disclaimer', 'Afstanden zijn schattingen. Gebruik de Google Maps link voor de exacte route.')}</p>`
+    + renderTip('transport', t('tip_transport', 'Afstanden zijn schattingen. Voeg een precies adres toe bij je suggestie voor betere resultaten.'));
 
     const suggestions = appState.suggestions;
     if (suggestions.length === 0) {

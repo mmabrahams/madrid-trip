@@ -120,6 +120,14 @@ body {
     letter-spacing: 1.5px;
 }
 
+.login-subtitle {
+    font-size: 0.88rem;
+    color: var(--text-light);
+    margin-top: -0.75rem;
+    margin-bottom: 1.5rem;
+    font-weight: 400;
+}
+
 .user-buttons {
     display: flex;
     flex-wrap: wrap;
@@ -1432,6 +1440,167 @@ header h1 {
     font-size: 0.78rem;
     color: var(--text-light);
     font-style: italic;
+}
+
+/* ---------- Help Modal ---------- */
+.modal-content-help {
+    max-width: 640px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.help-section {
+    margin-bottom: 1.75rem;
+    padding-bottom: 1.75rem;
+    border-bottom: 1px solid var(--border-light, #eee);
+}
+
+.help-section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.help-section-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--terracotta) 10%, white);
+    color: var(--terracotta);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.85rem;
+}
+
+.help-section-icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+.help-section h3 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 0.6rem;
+    color: var(--text);
+}
+
+.help-section-content {
+    font-size: 0.9rem;
+    line-height: 1.65;
+    color: var(--text-light);
+}
+
+.help-section-content strong {
+    color: var(--text);
+    font-weight: 600;
+}
+
+.help-welcome {
+    text-align: center;
+    padding: 0.5rem 0;
+}
+
+.help-welcome .help-section-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    margin: 0 auto 1rem;
+    background: var(--terracotta);
+    color: white;
+}
+
+.help-welcome h3 {
+    font-size: 1.4rem;
+}
+
+/* ---------- Inline Tips ---------- */
+.inline-tip {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem 2.2rem 0.75rem 0.85rem;
+    background: color-mix(in srgb, var(--terracotta) 6%, white);
+    border: 1px solid color-mix(in srgb, var(--terracotta) 15%, transparent);
+    border-radius: 10px;
+    margin-bottom: 1.25rem;
+    font-size: 0.84rem;
+    color: var(--text);
+    line-height: 1.5;
+    position: relative;
+}
+
+.inline-tip-icon {
+    color: var(--terracotta);
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.inline-tip-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.inline-tip-dismiss {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--text-light);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.inline-tip-dismiss:hover {
+    background: color-mix(in srgb, var(--terracotta) 10%, transparent);
+    color: var(--terracotta);
+}
+
+/* ---------- Enhanced Empty States ---------- */
+.empty-state-guided {
+    padding: 3rem 2rem;
+    text-align: center;
+}
+
+.empty-illustration {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--terracotta) 10%, white);
+    color: var(--terracotta);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.25rem;
+}
+
+.empty-illustration svg {
+    width: 26px;
+    height: 26px;
+}
+
+.empty-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+}
+
+.empty-subtitle {
+    font-size: 0.88rem;
+    color: var(--text-light);
+    max-width: 320px;
+    margin: 0 auto;
+    line-height: 1.55;
 }
 
 /* Transport extras */
