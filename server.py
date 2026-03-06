@@ -278,12 +278,22 @@ async def handle_message(websocket, raw):
             "lng": msg["lng"]
         }
 
+    elif action == "withdraw_proposal":
+        day = msg["day"]
+        proposal_id = msg["proposal_id"]
+        requester = msg["requester"]
+        proposal = next((p for p in state["days"][day]["proposals"] if p["id"] == proposal_id), None)
+        if proposal:
+            state["days"][day]["proposals"] = [
+                p for p in state["days"][day]["proposals"] if p["id"] != proposal_id
+            ]
+
     elif action == "remove_from_agenda":
         day = msg["day"]
         sid = msg["suggestion_id"]
         requester = msg["requester"]
         agenda_item = next((a for a in state["days"][day]["agenda"] if a["id"] == sid), None)
-        if agenda_item and agenda_item.get("author") == requester:
+        if agenda_item:
             state["days"][day]["agenda"] = [
                 a for a in state["days"][day]["agenda"] if a["id"] != sid
             ]

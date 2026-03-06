@@ -146,9 +146,9 @@ const ES = {
     help_welcome_title: "Bienvenido a Madrid 2026",
     help_welcome_text: "Esta app nos ayuda a planificar juntos el viaje a Madrid. Todos pueden sugerir actividades, votar y ver la agenda. A continuaci\u00f3n te explicamos c\u00f3mo funciona.",
     help_suggestions_title: "Sugerencias",
-    help_suggestions_text: "Ve a la pesta\u00f1a <strong>Sugerencias</strong> y pulsa <strong>+ Nueva sugerencia</strong>. Rellena el nombre, ubicaci\u00f3n, duraci\u00f3n, momento del d\u00eda y coste. Tambi\u00e9n puedes a\u00f1adir un enlace y descripci\u00f3n. Reconoces tus sugerencias por el punto de color con tu inicial. Solo t\u00fa puedes editar o eliminar tus propias sugerencias.",
+    help_suggestions_text: "Ve a la pesta\u00f1a <strong>Sugerencias</strong> y pulsa <strong>+ Nueva sugerencia</strong>. Rellena el nombre, ubicaci\u00f3n, duraci\u00f3n, momento del d\u00eda y coste. Reconoces tus sugerencias por el punto de color con tu inicial. Debajo de cada sugerencia hay <strong>botones de d\u00eda (D1-D4)</strong> para proponer directamente en qu\u00e9 d\u00eda quieres hacer la actividad.",
     help_voting_title: "Votaci\u00f3n",
-    help_voting_text: "Abre una pesta\u00f1a de d\u00eda (D\u00eda 1-4) y pulsa <strong>+ Proponer actividad</strong>. Elige una sugerencia de la lista. Ahora aparece una propuesta en la que todos pueden votar. Los 6 deben aceptar para que la actividad se confirme. Si alguien rechaza, la propuesta se rechaza. Puedes anular tu voto si cambias de opini\u00f3n.",
+    help_voting_text: "Propone una actividad con los botones de d\u00eda en una sugerencia, o con <strong>+ Proponer actividad</strong> en una pesta\u00f1a de d\u00eda. Los 6 deben aceptar para que la actividad se confirme. Si alguien rechaza, la propuesta se rechaza. Puedes anular tu voto, y como proponente puedes <strong>retirar</strong> la propuesta.",
     help_agenda_title: "Agenda y Notas",
     help_agenda_text: "Las actividades confirmadas aparecen en la secci\u00f3n <strong>Agenda</strong> de cada d\u00eda. Haz clic en un elemento de la agenda para ver los detalles. All\u00ed puedes a\u00f1adir notas (por ejemplo, horarios de reserva, consejos). Con el icono del calendario puedes exportar la actividad a tu agenda del tel\u00e9fono.",
     help_transport_title: "Transporte",
@@ -162,6 +162,14 @@ const ES = {
     no_suggestions_subtitle: "Pulsa el bot\u00f3n de arriba para proponer una actividad que te gustar\u00eda hacer en Madrid.",
     no_agenda_title: "A\u00fan no hay agenda",
     no_agenda_subtitle: "Propone una actividad con el bot\u00f3n de arriba. Si todos est\u00e1n de acuerdo, aparecer\u00e1 aqu\u00ed.",
+    // Withdraw & day chips
+    btn_withdraw: "Retirar",
+    confirm_withdraw: "\u00bfSeguro que quieres retirar esta propuesta?",
+    propose_for_day: "Proponer para d\u00eda:",
+    btn_propose_day: "Proponer para d\u00eda",
+    chip_proposed: "Propuesto",
+    chip_confirmed: "Confirmado",
+    btn_remove_agenda: "Eliminar de la agenda",
     // Daypart translations (for dynamic content)
     dayparts: {
         "Ochtend": "Ma\u00f1ana",
@@ -415,12 +423,12 @@ function renderHelp() {
         {
             icon: icons.layers,
             title: t('help_suggestions_title', 'Suggesties'),
-            content: t('help_suggestions_text', 'Ga naar het tabblad <strong>Suggesties</strong> en klik op <strong>+ Nieuwe suggestie</strong>. Vul de naam, locatie, duur, dagdeel en kosten in. Je kunt ook een link en beschrijving toevoegen. Jouw suggesties herken je aan het gekleurde bolletje met jouw initiaal. Alleen jij kunt je eigen suggesties bewerken of verwijderen.')
+            content: t('help_suggestions_text', 'Ga naar het tabblad <strong>Suggesties</strong> en klik op <strong>+ Nieuwe suggestie</strong>. Vul de naam, locatie, duur, dagdeel en kosten in. Jouw suggesties herken je aan het gekleurde bolletje met jouw initiaal. Onder elke suggestie staan <strong>dag-knoppen (D1-D4)</strong> waarmee je direct kunt voorstellen op welke dag je de activiteit wilt doen.')
         },
         {
             icon: icons.users,
             title: t('help_voting_title', 'Stemmen'),
-            content: t('help_voting_text', 'Open een dag-tab (Dag 1-4) en klik op <strong>+ Activiteit voorstellen</strong>. Kies een suggestie uit de lijst. Nu verschijnt een voorstel waarop iedereen kan stemmen. Alle 6 moeten accepteren voordat de activiteit wordt bevestigd. Als iemand afwijst, wordt het voorstel afgewezen. Je kunt je stem ook herroepen.')
+            content: t('help_voting_text', 'Stel een activiteit voor via de dag-knoppen op een suggestie, of via <strong>+ Activiteit voorstellen</strong> op een dag-tab. Alle 6 moeten accepteren voordat de activiteit wordt bevestigd. Als iemand afwijst, wordt het voorstel afgewezen. Je kunt je stem herroepen, en als voorsteller kun je het voorstel <strong>intrekken</strong>.')
         },
         {
             icon: icons.note,
@@ -488,6 +496,31 @@ function render() {
     }
 }
 
+function getSuggestionDayStatus(sid) {
+    const status = {};
+    for (const day of DAYS) {
+        const dd = appState.days[day.key];
+        if (!dd) { status[day.key] = 'available'; continue; }
+        if ((dd.agenda || []).some(a => a.id === sid)) {
+            status[day.key] = 'confirmed';
+        } else if ((dd.proposals || []).some(p => p.suggestion_id === sid)) {
+            status[day.key] = 'proposed';
+        } else {
+            status[day.key] = 'available';
+        }
+    }
+    return status;
+}
+
+function proposeFromCard(sid, dayKey) {
+    send({
+        action: "propose_for_day",
+        day: dayKey,
+        suggestion_id: sid,
+        proposer: currentUser
+    });
+}
+
 function renderSuggestions() {
     const list = document.getElementById('suggestions-list');
     const empty = document.getElementById('no-suggestions');
@@ -529,6 +562,19 @@ function renderSuggestions() {
                 <button class="btn btn-sm btn-edit" onclick="editSuggestion(${s.id})">${t('edit_btn', 'Bewerken')}</button>
                 <button class="btn btn-sm btn-danger" onclick="deleteSuggestion(${s.id})">${t('delete_btn', 'Verwijderen')}</button>
             </div>` : ''}
+            ${(() => {
+                const dayStatus = getSuggestionDayStatus(s.id);
+                return `<div class="day-chips">
+                    <span class="day-chips-label">${t('propose_for_day', 'Voorstel voor dag:')}</span>
+                    ${DAYS.map((d, i) => {
+                        const st = dayStatus[d.key];
+                        const num = i + 1;
+                        if (st === 'confirmed') return `<button class="day-chip used" disabled title="${t('chip_confirmed', 'Bevestigd')}">${icons.check}</button>`;
+                        if (st === 'proposed') return `<button class="day-chip used" disabled title="${t('chip_proposed', 'Voorgesteld')}">D${num}</button>`;
+                        return `<button class="day-chip" onclick="event.stopPropagation(); proposeFromCard(${s.id}, '${d.key}')" title="${t('btn_propose_day', 'Stel voor op dag')} ${num}">D${num}</button>`;
+                    }).join('')}
+                </div>`;
+            })()}
         </div>`;
     }).join('');
 }
@@ -580,6 +626,7 @@ function renderDay(day, index) {
                 <button class="btn-calendar" onclick="event.stopPropagation(); addToCalendar('${day.key}', ${a.id})" title="${t('btn_calendar', 'Toevoegen aan agenda')}">
                     ${icons.calendar}
                 </button>
+                <button class="agenda-remove" onclick="event.stopPropagation(); removeFromAgenda('${day.key}', ${a.id})" title="${t('btn_remove_agenda', 'Verwijder uit agenda')}">${icons.x}</button>
             </div>
         `}).join('');
     }
@@ -635,6 +682,9 @@ function renderProposal(p, dayKey) {
         </div>`;
     }
 
+    // Anyone can withdraw a proposal
+    const withdrawHtml = `<button class="btn btn-sm btn-withdraw" onclick="withdrawProposal('${dayKey}', ${p.id})">${icons.x} ${t('btn_withdraw', 'Intrekken')}</button>`;
+
     return `
     <div class="proposal-item ${isRejected ? 'rejected' : ''}" style="--card-color: ${color}">
         <div class="proposal-header">
@@ -649,6 +699,7 @@ function renderProposal(p, dayKey) {
         </div>
         <div class="votes-bar">${votesHtml}</div>
         ${actionsHtml}
+        ${withdrawHtml}
         ${isRejected ? `<p style="font-size:0.8rem;color:var(--danger);margin-top:0.5rem;">${t('rejected_label', 'Afgewezen')}</p>` : ''}
     </div>`;
 }
@@ -820,6 +871,17 @@ function deleteNote(dayKey, suggestionId, noteId) {
         note_id: noteId,
         requester: currentUser
     });
+}
+
+function withdrawProposal(dayKey, proposalId) {
+    if (confirm(t('confirm_withdraw', 'Weet je zeker dat je dit voorstel wilt intrekken?'))) {
+        send({
+            action: "withdraw_proposal",
+            day: dayKey,
+            proposal_id: proposalId,
+            requester: currentUser
+        });
+    }
 }
 
 function removeFromAgenda(dayKey, suggestionId) {
