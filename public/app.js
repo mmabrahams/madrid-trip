@@ -207,19 +207,22 @@ const translationCache = new Map();
 const pendingTranslations = new Map();
 
 /**
- * Translate free-text content (title, location, duration, cost) via MyMemory API.
+ * Translate free-text content via MyMemory API.
+ * langPair: e.g. 'nl|es' or 'es|nl'
  * Returns cached value if available, otherwise starts async fetch and re-renders.
  */
-function translateText(text) {
-    if (!text || !isSpanish()) return text;
+function _translate(text, langPair) {
+    if (!text) return text;
+
+    const cacheKey = langPair + ':' + text;
 
     // Check cache
-    if (translationCache.has(text)) return translationCache.get(text);
+    if (translationCache.has(cacheKey)) return translationCache.get(cacheKey);
 
     // Don't re-fetch if already pending
-    if (!pendingTranslations.has(text)) {
-        pendingTranslations.set(text, true);
-        fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=nl|es`)
+    if (!pendingTranslations.has(cacheKey)) {
+        pendingTranslations.set(cacheKey, true);
+        fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langPair}`)
             .then(r => r.json())
             .then(data => {
                 if (data.responseData && data.responseData.translatedText) {
@@ -228,34 +231,62 @@ function translateText(text) {
                     if (text[0] === text[0].toLowerCase() && translated[0] !== translated[0].toLowerCase()) {
                         translated = translated[0].toLowerCase() + translated.slice(1);
                     }
-                    translationCache.set(text, translated);
+                    translationCache.set(cacheKey, translated);
                 } else {
-                    translationCache.set(text, text); // fallback to original
+                    translationCache.set(cacheKey, text); // fallback to original
                 }
-                pendingTranslations.delete(text);
+                pendingTranslations.delete(cacheKey);
                 render(); // re-render with translated content
             })
             .catch(() => {
-                translationCache.set(text, text);
-                pendingTranslations.delete(text);
+                translationCache.set(cacheKey, text);
+                pendingTranslations.delete(cacheKey);
             });
     }
 
     return text; // return original while loading
 }
 
+/** Translate NL→ES (for Edje viewing Dutch content) */
+function translateText(text) {
+    if (!text || !isSpanish()) return text;
+    return _translate(text, 'nl|es');
+}
+
+/** Translate ES→NL (for Dutch users viewing Edje's Spanish content) */
+function translateToNL(text) {
+    if (!text || isSpanish()) return text;
+    return _translate(text, 'es|nl');
+}
+
 /** Translate a suggestion's display fields. Returns new object with translated strings. */
 function tSuggestion(s) {
-    if (!isSpanish()) return s;
-    return {
-        ...s,
-        title: translateText(s.title),
-        location: translateText(s.location),
-        duration: translateText(s.duration),
-        daypart: tDaypart(s.daypart),
-        cost: translateText(s.cost),
-        description: s.description ? translateText(s.description) : ""
-    };
+    // Edje viewing → translate NL content to ES
+    if (isSpanish() && s.author !== "Edje") {
+        return {
+            ...s,
+            title: translateText(s.title),
+            location: translateText(s.location),
+            duration: translateText(s.duration),
+            daypart: tDaypart(s.daypart),
+            cost: translateText(s.cost),
+            description: s.description ? translateText(s.description) : ""
+        };
+    }
+    // Dutch users viewing Edje's Spanish content → translate ES to NL
+    if (!isSpanish() && s.author === "Edje") {
+        return {
+            ...s,
+            title: translateToNL(s.title),
+            location: translateToNL(s.location),
+            duration: translateToNL(s.duration),
+            daypart: s.daypart,
+            cost: translateToNL(s.cost),
+            description: s.description ? translateToNL(s.description) : ""
+        };
+    }
+    // Edje viewing own content or Dutch user viewing Dutch content → no translation
+    return isSpanish() ? { ...s, daypart: tDaypart(s.daypart) } : s;
 }
 
 /** Apply i18n to static HTML elements with data-i18n attributes. */
