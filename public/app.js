@@ -772,9 +772,7 @@ document.getElementById('code-form').addEventListener('submit', (e) => {
 
 /* ---------- Help Modal ---------- */
 document.getElementById('help-btn').addEventListener('click', () => {
-    renderHelp();
-    const closeBtn = document.getElementById('close-help');
-    if (closeBtn) closeBtn.textContent = t('btn_close', 'Sluiten');
+    renderWelcome();
     document.getElementById('help-modal').classList.add('active');
 });
 
