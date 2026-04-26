@@ -151,16 +151,24 @@ def init_db():
     global pg_conn
     if not DATABASE_URL:
         return
-    pg_conn = psycopg2.connect(DATABASE_URL)
-    pg_conn.autocommit = True
-    with pg_conn.cursor() as cur:
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS app_state (
-                id INTEGER PRIMARY KEY DEFAULT 1,
-                data JSONB NOT NULL,
-                CHECK (id = 1)
-            )
-        """)
+    try:
+        pg_conn = psycopg2.connect(DATABASE_URL, connect_timeout=5)
+        pg_conn.autocommit = True
+        with pg_conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS app_state (
+                    id INTEGER PRIMARY KEY DEFAULT 1,
+                    data JSONB NOT NULL,
+                    CHECK (id = 1)
+                )
+            """)
+        print("[db] Connected to Postgres.")
+    except Exception as e:
+        # Don't crash the server when the database is unreachable — fall back to file
+        # storage so the app still starts. Useful during outages or if the Postgres
+        # instance has been deleted (e.g. Render free tier expiry).
+        pg_conn = None
+        print(f"[db] WARNING: could not connect to Postgres ({e}); falling back to file storage at {DATA_FILE}")
 
 
 def load_state():
