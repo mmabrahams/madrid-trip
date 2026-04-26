@@ -1,4 +1,38 @@
 /* ---------- Config ---------- */
+const CURRENT_TRIP_ID = (() => {
+    const m = window.location.pathname.match(/^\/t\/([a-z0-9-]+)/i);
+    return m ? m[1] : null;
+})();
+const ROUTE = (() => {
+    if (CURRENT_TRIP_ID) return 'trip';
+    if (window.location.pathname === '/new') return 'new';
+    return 'landing';
+})();
+const USER_KEY = CURRENT_TRIP_ID ? `trip-user-${CURRENT_TRIP_ID}` : null;
+const CODE_KEY = CURRENT_TRIP_ID ? `trip-code-${CURRENT_TRIP_ID}` : null;
+const NEW_TRIP_PALETTE = [
+    "#C4613A", "#3A8F85", "#C69C4E", "#6B5BAD",
+    "#D08B4A", "#4A90A4", "#8B5A8C", "#5C8A47",
+    "#B85C7A", "#5673A8", "#C2965A", "#7A6B47",
+];
+
+function colorFor(name) {
+    if (appState && appState.participants) {
+        const p = appState.participants.find(x => x.name === name);
+        if (p && p.color) return p.color;
+    }
+    return COLORS[name] || '#888';
+}
+function initialFor(name) {
+    if (INITIALS[name]) return INITIALS[name];
+    return (name || '?').charAt(0).toUpperCase();
+}
+function tripParticipantNames() {
+    if (appState && appState.participants) {
+        return appState.participants.map(p => p.name);
+    }
+    return PARTICIPANTS;
+}
 const PARTICIPANTS = ["Edje", "Maxime", "El Sierd", "Miqi", "Koen", "Bart"];
 const COLORS = {
     "Edje": "#C4613A",
@@ -16,14 +50,54 @@ const INITIALS = {
     "Koen": "K",
     "Bart": "B"
 };
-const DAYS = [
-    { key: "2026-04-01", label: "Woensdag 1 april", short: "1 apr" },
-    { key: "2026-04-02", label: "Donderdag 2 april", short: "2 apr" },
-    { key: "2026-04-03", label: "Vrijdag 3 april", short: "3 apr" },
-    { key: "2026-04-04", label: "Zaterdag 4 april", short: "4 apr" }
-];
+// DAYS and DAY_TABS are filled by refreshDays() once trip state arrives.
+let DAYS = [];
+let DAY_TABS = {};
 
-const DAY_TABS = { "day-1": "2026-04-01", "day-2": "2026-04-02", "day-3": "2026-04-03", "day-4": "2026-04-04" };
+const NL_DAY_NAMES = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag'];
+const NL_MONTH_NAMES = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
+const NL_MONTH_SHORT = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+const EN_DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const EN_MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const EN_MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const ES_DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+const ES_MONTH_NAMES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const ES_MONTH_SHORT = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+function dayMonthNames() {
+    const lang = viewerLanguage();
+    if (lang === 'en') return { days: EN_DAY_NAMES, months: EN_MONTH_NAMES, monthsShort: EN_MONTH_SHORT };
+    if (lang === 'es') return { days: ES_DAY_NAMES, months: ES_MONTH_NAMES, monthsShort: ES_MONTH_SHORT };
+    return { days: NL_DAY_NAMES, months: NL_MONTH_NAMES, monthsShort: NL_MONTH_SHORT };
+}
+
+function computeTripDays(state) {
+    if (!state || !state.start_date || !state.end_date) return [];
+    const { days: dayNames, months: monthNames, monthsShort } = dayMonthNames();
+    const start = new Date(state.start_date + 'T12:00:00');
+    const end = new Date(state.end_date + 'T12:00:00');
+    const days = [];
+    let i = 1;
+    for (let cur = new Date(start); cur <= end; cur.setDate(cur.getDate() + 1)) {
+        const key = `${cur.getFullYear()}-${String(cur.getMonth()+1).padStart(2,'0')}-${String(cur.getDate()).padStart(2,'0')}`;
+        days.push({
+            key,
+            label: `${dayNames[cur.getDay()]} ${cur.getDate()} ${monthNames[cur.getMonth()]}`,
+            short: `${cur.getDate()} ${monthsShort[cur.getMonth()]}`,
+            tabId: `day-${i}`,
+            num: i,
+        });
+        i++;
+    }
+    return days;
+}
+
+function refreshDays() {
+    if (!appState) return;
+    DAYS = computeTripDays(appState);
+    DAY_TABS = {};
+    DAYS.forEach(d => { DAY_TABS[d.tabId] = d.key; });
+}
 
 const HOTELS = [
     {
@@ -170,6 +244,7 @@ const ES = {
     chip_proposed: "Propuesto",
     chip_confirmed: "Confirmado",
     btn_remove_agenda: "Eliminar de la agenda",
+    archived_banner: "Este viaje ha terminado \u2014 solo lectura.",
     // Daypart translations (for dynamic content)
     dayparts: {
         "Ochtend": "Ma\u00f1ana",
@@ -180,25 +255,158 @@ const ES = {
     }
 };
 
-function isSpanish() {
-    return currentUser === "Edje";
+/* ---------- i18n: English translations ---------- */
+const EN = {
+    login_title: "Who are you?",
+    tab_suggestions: "Suggestions",
+    tab_transport: "Transport",
+    all_suggestions: "All suggestions",
+    new_suggestion: "+ New suggestion",
+    no_suggestions: "No suggestions yet. Add one!",
+    new_suggestion_title: "New suggestion",
+    edit_suggestion_title: "Edit suggestion",
+    label_activity: "Activity",
+    placeholder_activity: "E.g. Visit the Prado Museum",
+    label_location: "Location",
+    placeholder_location: "E.g. Calle de Ruiz de Alarc\u00f3n, 23",
+    label_duration: "Duration",
+    placeholder_duration: "E.g. 2 hours",
+    label_daypart: "Time of day",
+    option_choose: "Choose...",
+    option_morning: "Morning",
+    option_afternoon: "Afternoon",
+    option_evening: "Evening",
+    option_allday: "All day",
+    option_tbd: "To be decided",
+    label_cost: "Cost (per person)",
+    placeholder_cost: "E.g. \u20ac15, Free or Varies",
+    label_link: "Link",
+    label_optional: "(optional)",
+    placeholder_link: "E.g. https://www.museodelprado.es",
+    label_description: "Description",
+    placeholder_description: "Tell us more about this activity...",
+    btn_cancel: "Cancel",
+    btn_add: "Add",
+    btn_close: "Close",
+    btn_save: "Save",
+    add_to_day_title: "Add suggestion to day",
+    logout_title: "Switch user",
+    propose_btn: "+ Propose activity",
+    agenda_title: "Agenda",
+    no_agenda: "No confirmed activities for this day yet.",
+    proposals_title: "Proposals",
+    proposed_by: "Proposed by",
+    btn_accept: "Accept",
+    btn_reject: "Reject",
+    rejected_label: "Rejected",
+    btn_revoke: "Revoke vote",
+    btn_calendar: "Add to calendar",
+    delete_btn: "Delete",
+    edit_btn: "Edit",
+    confirm_delete: "Are you sure you want to delete this suggestion?",
+    all_proposed: "All suggestions have already been proposed or confirmed for this day.",
+    connected: "Connected",
+    disconnected: "Connection lost...",
+    detail_title: "Activity details",
+    author_label: "Suggested by",
+    notes_title: "Notes",
+    no_notes: "No notes yet. Add one!",
+    note_placeholder: "Write a note...",
+    btn_add_note: "Add",
+    btn_delete_note: "Delete",
+    btn_remove_agenda: "Remove from agenda",
+    confirm_remove_agenda: "Are you sure you want to remove this activity from the agenda?",
+    link_label: "More info",
+    transport_title: "Transport & Distances",
+    no_transport_data: "Add suggestions first to see distances.",
+    geocoding: "Looking up location...",
+    rec_walk: "Walk",
+    rec_uber: "Uber/taxi",
+    hotel_dates_label: "Nights",
+    hotel_label: "Hotel",
+    no_hotel_set: "No hotel set for this trip. Add a hotel via trip settings to see distances.",
+    clusters_title: "Combine activities",
+    no_clusters: "No nearby activities to combine.",
+    cluster_label: "Area",
+    apart_label: "apart",
+    cluster_tip: "These activities are close together and can be combined!",
+    walking_label: "walking",
+    driving_label: "driving",
+    transport_disclaimer: "Distances are estimates. Use the Google Maps link for the exact route.",
+    vague_location_warning: "The location is vague. Distances may be inaccurate.",
+    vague_location_tip: "copy the address from Google Maps for a better result.",
+    route_link: "Route in Google Maps",
+    login_subtitle: "Pick your name to start",
+    help_title: "Help",
+    tip_suggestions: "Anyone can add suggestions. You can edit or delete your own.",
+    tip_day: "Propose activities and vote together. Click an agenda item for details and notes.",
+    tip_transport: "Distances are estimates. Add a precise address to your suggestion for better results.",
+    no_suggestions_title: "No suggestions yet",
+    no_agenda_title: "No agenda yet",
+    no_agenda_subtitle: "Propose an activity with the button above. If everyone agrees, it shows up here.",
+    btn_withdraw: "Withdraw",
+    confirm_withdraw: "Are you sure you want to withdraw this proposal?",
+    propose_for_day: "Propose for day:",
+    btn_propose_day: "Propose for day",
+    chip_proposed: "Proposed",
+    chip_confirmed: "Confirmed",
+    day_label_short: "Day",
+    archived_banner: "This trip is finished — read-only.",
+    dayparts: {
+        "Ochtend": "Morning",
+        "Middag": "Afternoon",
+        "Avond": "Evening",
+        "Hele dag": "All day",
+        "Nog te beslissen": "To be decided",
+    },
+};
+
+function dictFor(lang) {
+    if (lang === 'es') return ES;
+    if (lang === 'en') return EN;
+    return null;
 }
 
-/** Translate a UI key. Returns Spanish if Edje, otherwise returns fallback (Dutch). */
+function isArchived() {
+    if (!appState || !appState.end_date) return false;
+    const end = new Date(appState.end_date + 'T23:59:59');
+    return end < new Date();
+}
+
+function viewerLanguage() {
+    if (!appState || !currentUser) return 'nl';
+    const me = appState.participants?.find(p => p.name === currentUser);
+    return me?.language || appState.language || 'nl';
+}
+
+function authorLanguage(name) {
+    if (!appState || !name) return appState?.language || 'nl';
+    const a = appState.participants?.find(p => p.name === name);
+    return a?.language || appState.language || 'nl';
+}
+
+function isSpanish() {
+    return viewerLanguage() === 'es';
+}
+
+/** Translate a UI key. Looks up in EN/ES dict based on viewer language; falls back to NL. */
 function t(key, fallback) {
-    if (isSpanish() && ES[key] !== undefined) return ES[key];
+    const dict = dictFor(viewerLanguage());
+    if (dict && dict[key] !== undefined) return dict[key];
     return fallback || key;
 }
 
-/** Translate a daypart value */
+/** Translate a daypart value (Dutch source → viewer language). */
 function tDaypart(val) {
-    if (isSpanish() && ES.dayparts[val]) return ES.dayparts[val];
+    const dict = dictFor(viewerLanguage());
+    if (dict && dict.dayparts && dict.dayparts[val]) return dict.dayparts[val];
     return val;
 }
 
-/** Translate a day label */
+/** Translate a day label. Madrid still has hardcoded ES day_labels; otherwise returns the
+ * dynamically generated label which is already in the viewer's language (see computeTripDays). */
 function tDayLabel(dayKey, nlLabel) {
-    if (isSpanish() && ES.day_labels[dayKey]) return ES.day_labels[dayKey];
+    if (isSpanish() && ES.day_labels && ES.day_labels[dayKey]) return ES.day_labels[dayKey];
     return nlLabel;
 }
 
@@ -261,8 +469,10 @@ function translateToNL(text) {
 
 /** Translate a suggestion's display fields. Returns new object with translated strings. */
 function tSuggestion(s) {
-    // Edje viewing → translate NL content to ES
-    if (isSpanish() && s.author !== "Edje") {
+    const viewer = viewerLanguage();
+    const source = authorLanguage(s.author);
+    // Spanish viewer reading non-Spanish source → translate to ES
+    if (viewer === 'es' && source !== 'es') {
         return {
             ...s,
             title: translateText(s.title),
@@ -273,8 +483,8 @@ function tSuggestion(s) {
             description: s.description ? translateText(s.description) : ""
         };
     }
-    // Dutch users viewing Edje's Spanish content → translate ES to NL
-    if (!isSpanish() && s.author === "Edje") {
+    // Non-Spanish viewer reading Spanish source → translate to NL
+    if (viewer !== 'es' && source === 'es') {
         return {
             ...s,
             title: translateToNL(s.title),
@@ -285,34 +495,38 @@ function tSuggestion(s) {
             description: s.description ? translateToNL(s.description) : ""
         };
     }
-    // Edje viewing own content or Dutch user viewing Dutch content → no translation
-    return isSpanish() ? { ...s, daypart: tDaypart(s.daypart) } : s;
+    // Same language for viewer and source → no translation
+    return viewer === 'es' ? { ...s, daypart: tDaypart(s.daypart) } : s;
 }
 
-/** Apply i18n to static HTML elements with data-i18n attributes. */
+/** Apply i18n to static HTML elements with data-i18n attributes.
+ * Stores the original Dutch text in a data-orig attribute so we can revert when
+ * the viewer switches language. */
 function applyStaticTranslations() {
+    const dict = dictFor(viewerLanguage());
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
-        if (isSpanish() && ES[key] !== undefined) {
-            el.textContent = ES[key];
-        }
+        if (el.dataset.origText === undefined) el.dataset.origText = el.textContent;
+        if (dict && dict[key] !== undefined) el.textContent = dict[key];
+        else el.textContent = el.dataset.origText;
     });
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
         const key = el.getAttribute('data-i18n-placeholder');
-        if (isSpanish() && ES[key] !== undefined) {
-            el.placeholder = ES[key];
-        }
+        if (el.dataset.origPlaceholder === undefined) el.dataset.origPlaceholder = el.placeholder;
+        if (dict && dict[key] !== undefined) el.placeholder = dict[key];
+        else el.placeholder = el.dataset.origPlaceholder;
     });
     document.querySelectorAll('[data-i18n-title]').forEach(el => {
         const key = el.getAttribute('data-i18n-title');
-        if (isSpanish() && ES[key] !== undefined) {
-            el.title = ES[key];
-        }
+        if (el.dataset.origTitle === undefined) el.dataset.origTitle = el.title;
+        if (dict && dict[key] !== undefined) el.title = dict[key];
+        else el.title = el.dataset.origTitle;
     });
 }
 
 /* ---------- State ---------- */
 let currentUser = null;
+let currentCode = localStorage.getItem(CODE_KEY) || null;
 let appState = null;
 let ws = null;
 let reconnectTimer = null;
@@ -321,6 +535,8 @@ let openDetailSuggestionId = null;
 let editingSuggestionId = null;
 
 /* ---------- WebSocket ---------- */
+let pendingMessages = [];
+
 function connect() {
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${wsProtocol}//${window.location.host}/ws`;
@@ -328,14 +544,30 @@ function connect() {
 
     ws.onopen = () => {
         setConnectionStatus(true);
-        ws.send(JSON.stringify({ action: "get_state" }));
+        while (pendingMessages.length) {
+            ws.send(JSON.stringify(pendingMessages.shift()));
+        }
+        if (CURRENT_TRIP_ID && currentCode) send({ action: "get_state" });
     };
 
     ws.onmessage = (event) => {
         const msg = JSON.parse(event.data);
         if (msg.type === "state") {
+            const wasOnCodeScreen = document.querySelector('.screen.active')?.id === 'code-screen';
             appState = msg.data;
             render();
+            if (wasOnCodeScreen) {
+                if (currentUser) showApp();
+                else showLogin();
+            }
+        } else if (msg.type === "trip_created") {
+            handleTripCreated(msg);
+        } else if (msg.type === "code_regenerated") {
+            handleCodeRegenerated(msg);
+        } else if (msg.type === "trip_deleted") {
+            handleTripDeleted();
+        } else if (msg.type === "error") {
+            handleServerError(msg.reason);
         }
     };
 
@@ -350,9 +582,79 @@ function connect() {
 }
 
 function send(action) {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify(action));
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    if (!CURRENT_TRIP_ID || !currentCode) return;
+    const payload = {
+        trip_id: CURRENT_TRIP_ID,
+        code: currentCode,
+        ...action,
+    };
+    if (currentUser && payload.requester === undefined) {
+        payload.requester = currentUser;
     }
+    ws.send(JSON.stringify(payload));
+}
+
+function sendRaw(payload) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(payload));
+    } else {
+        pendingMessages.push(payload);
+    }
+}
+
+const ERROR_MESSAGES = {
+    invalid_code: "De code klopt niet.",
+    unknown_trip: "Deze trip bestaat niet.",
+    not_participant: "Je staat niet op de deelnemerslijst.",
+    forbidden: "Je hebt geen rechten voor deze actie.",
+    invalid_dates: "Ongeldige datums.",
+    dates_too_long: "Maximaal 14 dagen.",
+    removed_day_has_data: "Een dag die je wilt verwijderen heeft nog voorstellen of agenda-items.",
+    invalid_participant_name: "Vul een geldige naam in.",
+    duplicate_participant: "Deze naam staat al op de deelnemerslijst.",
+    too_many_participants: "Maximaal 12 deelnemers.",
+    cannot_remove_owner: "De eigenaar kun je niet verwijderen.",
+    min_participants: "Minimaal 2 deelnemers vereist.",
+    confirmation_mismatch: "De ingevoerde naam komt niet overeen.",
+    trip_archived: "Deze trip is afgerond — niet meer te wijzigen.",
+    invalid_name: "Trip-naam is ongeldig.",
+    invalid_flag: "Vlag is ongeldig.",
+    invalid_language: "Ongeldige taal.",
+    invalid_voting_rule: "Ongeldige stemregel.",
+};
+
+function handleServerError(reason) {
+    if (reason === "invalid_code") {
+        currentCode = null;
+        if (CODE_KEY) localStorage.removeItem(CODE_KEY);
+        showCodeScreen("De code klopt niet.");
+        return;
+    }
+    if (reason === "unknown_trip") {
+        showCodeScreen("Deze trip bestaat niet.");
+        return;
+    }
+    const text = ERROR_MESSAGES[reason] || `Fout: ${reason}`;
+    // If settings modal is open, show error there too.
+    const settingsOpen = document.getElementById('settings-modal')?.classList.contains('active');
+    if (settingsOpen) {
+        showSettingsError(text);
+    }
+    showToast(text);
+}
+
+function showToast(text) {
+    let el = document.querySelector('.error-toast');
+    if (!el) {
+        el = document.createElement('div');
+        el.className = 'error-toast';
+        document.body.appendChild(el);
+    }
+    el.textContent = text;
+    el.classList.add('visible');
+    clearTimeout(el._timer);
+    el._timer = setTimeout(() => el.classList.remove('visible'), 3500);
 }
 
 function setConnectionStatus(connected) {
@@ -394,44 +696,79 @@ const icons = {
     compass: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>',
 };
 
-/* ---------- Login ---------- */
-document.querySelectorAll('.user-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        currentUser = btn.dataset.user;
-        localStorage.setItem('madrid-user', currentUser);
-        showApp();
-    });
-});
+/* ---------- Screens ---------- */
+function setActiveScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
 
-document.getElementById('logout-btn').addEventListener('click', () => {
-    currentUser = null;
-    localStorage.removeItem('madrid-user');
-    document.getElementById('app-screen').classList.remove('active');
-    document.getElementById('login-screen').classList.add('active');
-    // Reset static text to Dutch defaults
+function showCodeScreen(errorText) {
+    setActiveScreen('code-screen');
+    const err = document.getElementById('code-error');
+    if (errorText) {
+        err.textContent = errorText;
+        err.style.display = 'block';
+    } else {
+        err.style.display = 'none';
+    }
+    document.getElementById('code-input').value = '';
+    setTimeout(() => document.getElementById('code-input').focus(), 50);
+}
+
+function showLogin() {
+    setActiveScreen('login-screen');
+}
+
+/* ---------- Login ---------- */
+// User buttons are wired up dynamically in renderLoginScreen() once trip state arrives.
+
+document.getElementById('logout-btn')?.addEventListener('click', () => {
+    if (USER_KEY) {
+        currentUser = null;
+        localStorage.removeItem(USER_KEY);
+    }
     location.reload();
 });
 
 function showApp() {
-    document.getElementById('login-screen').classList.remove('active');
-    document.getElementById('app-screen').classList.add('active');
+    setActiveScreen('app-screen');
 
     const badge = document.getElementById('current-user-badge');
     badge.textContent = currentUser;
-    badge.style.borderColor = COLORS[currentUser];
-    badge.style.color = COLORS[currentUser];
+    badge.style.borderColor = colorFor(currentUser);
+    badge.style.color = colorFor(currentUser);
 
-    // Apply static translations for Edje
     applyStaticTranslations();
 
-    connect();
+    if (!appState) {
+        send({ action: "get_state" });
+    } else {
+        // State already loaded — re-render so chrome (settings tandwiel, lang popover, etc.)
+        // reflects the now-known currentUser.
+        render();
+    }
 
-    // Auto-show help on first visit
-    if (!localStorage.getItem('madrid-help-seen')) {
-        localStorage.setItem('madrid-help-seen', '1');
+    const helpKey = `help-seen-${CURRENT_TRIP_ID}`;
+    if (!localStorage.getItem(helpKey)) {
+        localStorage.setItem(helpKey, '1');
         setTimeout(() => { renderHelp(); document.getElementById('help-modal').classList.add('active'); }, 600);
     }
 }
+
+/* ---------- Code form ---------- */
+document.getElementById('code-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const value = document.getElementById('code-input').value.trim().toUpperCase();
+    if (!value) return;
+    currentCode = value;
+    localStorage.setItem(CODE_KEY, currentCode);
+    document.getElementById('code-error').style.display = 'none';
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        send({ action: "get_state" });
+    } else {
+        connect();
+    }
+});
 
 /* ---------- Help Modal ---------- */
 document.getElementById('help-btn').addEventListener('click', () => {
@@ -444,33 +781,72 @@ document.getElementById('close-help').addEventListener('click', () => {
 });
 
 function renderHelp() {
-    const sections = [
-        {
-            icon: icons.lightbulb,
-            title: t('help_welcome_title', 'Welkom bij Madrid 2026'),
-            content: t('help_welcome_text', 'Deze app helpt ons om samen de Madrid-trip te plannen. Iedereen kan activiteiten voorstellen, stemmen en de agenda bekijken. Hieronder leggen we uit hoe alles werkt.'),
-            cssClass: 'help-welcome'
-        },
-        {
-            icon: icons.layers,
-            title: t('help_suggestions_title', 'Suggesties'),
-            content: t('help_suggestions_text', 'Ga naar het tabblad <strong>Suggesties</strong> en klik op <strong>+ Nieuwe suggestie</strong>. Vul de naam, locatie, duur, dagdeel en kosten in. Jouw suggesties herken je aan het gekleurde bolletje met jouw initiaal. Onder elke suggestie staan <strong>dag-knoppen (D1-D4)</strong> waarmee je direct kunt voorstellen op welke dag je de activiteit wilt doen.')
-        },
-        {
-            icon: icons.users,
-            title: t('help_voting_title', 'Stemmen'),
-            content: t('help_voting_text', 'Stel een activiteit voor via de dag-knoppen op een suggestie, of via <strong>+ Activiteit voorstellen</strong> op een dag-tab. Alle 6 moeten accepteren voordat de activiteit wordt bevestigd. Als iemand afwijst, wordt het voorstel afgewezen. Je kunt je stem herroepen, en als voorsteller kun je het voorstel <strong>intrekken</strong>.')
-        },
-        {
-            icon: icons.note,
-            title: t('help_agenda_title', 'Agenda & Notities'),
-            content: t('help_agenda_text', 'Bevestigde activiteiten verschijnen in de <strong>Agenda</strong> sectie van elke dag. Klik op een agenda-item voor details. Daar kun je notities toevoegen (bijv. reserveringstijden, tips). Met het kalender-icoontje exporteer je de activiteit naar je telefoon-agenda.')
-        },
-        {
-            icon: icons.compass,
-            title: t('help_transport_title', 'Vervoer'),
-            content: t('help_transport_text', 'Het tabblad <strong>Vervoer</strong> toont de afstand van onze hotels naar elke activiteit. Je ziet loop- en rijtijden met een aanbeveling (lopen of Uber). Klik op <strong>Route in Google Maps</strong> voor de exacte route. Onderaan zie je welke activiteiten dicht bij elkaar liggen en gecombineerd kunnen worden.')
-        }
+    const tripName = appState?.name || 'Trip';
+    const total = appState?.participants?.length || 0;
+    const lastDay = (DAYS.length || 0) || 4;
+    const voting = appState?.voting_rule || 'unanimous';
+    const lang = viewerLanguage();
+
+    const acceptanceText = {
+        nl: voting === 'majority'
+            ? `Een meerderheid (>${Math.floor(total / 2)} van ${total}) moet accepteren voordat de activiteit wordt bevestigd.`
+            : `Alle ${total} moeten accepteren voordat de activiteit wordt bevestigd.`,
+        en: voting === 'majority'
+            ? `A majority (>${Math.floor(total / 2)} of ${total}) must accept before the activity is confirmed.`
+            : `All ${total} must accept before the activity is confirmed.`,
+        es: voting === 'majority'
+            ? `Una mayoría (>${Math.floor(total / 2)} de ${total}) debe aceptar para confirmar la actividad.`
+            : `Los ${total} deben aceptar para que la actividad se confirme.`,
+    };
+
+    const sections = lang === 'es' ? [
+        { icon: icons.lightbulb, cssClass: 'help-welcome',
+          title: `Bienvenido a ${tripName}`,
+          content: `Esta app nos ayuda a planificar juntos el viaje "${tripName}". Todos pueden sugerir actividades, votar y ver la agenda. A continuación te explicamos cómo funciona.` },
+        { icon: icons.layers,
+          title: 'Sugerencias',
+          content: `Ve a la pestaña <strong>Sugerencias</strong> y pulsa <strong>+ Nueva sugerencia</strong>. Rellena el nombre, ubicación, duración, momento del día y coste. Reconoces tus sugerencias por el punto de color con tu inicial. Debajo de cada sugerencia hay <strong>botones de día (D1-D${lastDay})</strong> para proponer directamente en qué día quieres hacer la actividad.` },
+        { icon: icons.users,
+          title: 'Votación',
+          content: `Propone una actividad con los botones de día en una sugerencia, o con <strong>+ Proponer actividad</strong> en una pestaña de día. ${acceptanceText.es} Si alguien rechaza (en modo unánime), la propuesta se rechaza. Puedes anular tu voto, y como proponente puedes <strong>retirar</strong> la propuesta.` },
+        { icon: icons.note,
+          title: 'Agenda y Notas',
+          content: 'Las actividades confirmadas aparecen en la sección <strong>Agenda</strong> de cada día. Haz clic en un elemento de la agenda para ver los detalles. Allí puedes añadir notas (por ejemplo, horarios de reserva, consejos). Con el icono del calendario puedes exportar la actividad a tu agenda del teléfono.' },
+        { icon: icons.compass,
+          title: 'Transporte',
+          content: 'La pestaña <strong>Transporte</strong> muestra la distancia desde el hotel a cada actividad. Ves tiempos a pie y en coche con una recomendación (caminar o Uber). Pulsa <strong>Ruta en Google Maps</strong> para la ruta exacta. Abajo ves qué actividades están cerca y se pueden combinar.' },
+    ] : lang === 'en' ? [
+        { icon: icons.lightbulb, cssClass: 'help-welcome',
+          title: `Welcome to ${tripName}`,
+          content: `This app helps us plan the "${tripName}" trip together. Everyone can suggest activities, vote, and view the agenda. Below we explain how it works.` },
+        { icon: icons.layers,
+          title: 'Suggestions',
+          content: `Go to the <strong>Suggestions</strong> tab and click <strong>+ New suggestion</strong>. Fill in name, location, duration, time of day and cost. You'll recognise your suggestions by the coloured dot with your initial. Below each suggestion are <strong>day buttons (D1-D${lastDay})</strong> to propose directly on which day you want to do the activity.` },
+        { icon: icons.users,
+          title: 'Voting',
+          content: `Propose an activity via the day buttons on a suggestion, or via <strong>+ Propose activity</strong> on a day tab. ${acceptanceText.en} If someone rejects (in unanimous mode), the proposal is rejected. You can revoke your vote, and as proposer you can <strong>withdraw</strong> the proposal.` },
+        { icon: icons.note,
+          title: 'Agenda & Notes',
+          content: 'Confirmed activities appear in the <strong>Agenda</strong> section of each day. Click an agenda item for details. There you can add notes (e.g. reservation times, tips). Use the calendar icon to export the activity to your phone calendar.' },
+        { icon: icons.compass,
+          title: 'Transport',
+          content: 'The <strong>Transport</strong> tab shows the distance from the hotel to each activity. You see walking and driving times with a recommendation (walk or Uber). Click <strong>Route in Google Maps</strong> for the exact route. At the bottom you see which activities are close together and can be combined.' },
+    ] : [
+        { icon: icons.lightbulb, cssClass: 'help-welcome',
+          title: `Welkom bij ${tripName}`,
+          content: `Deze app helpt ons om samen de "${tripName}"-trip te plannen. Iedereen kan activiteiten voorstellen, stemmen en de agenda bekijken. Hieronder leggen we uit hoe alles werkt.` },
+        { icon: icons.layers,
+          title: 'Suggesties',
+          content: `Ga naar het tabblad <strong>Suggesties</strong> en klik op <strong>+ Nieuwe suggestie</strong>. Vul de naam, locatie, duur, dagdeel en kosten in. Jouw suggesties herken je aan het gekleurde bolletje met jouw initiaal. Onder elke suggestie staan <strong>dag-knoppen (D1-D${lastDay})</strong> waarmee je direct kunt voorstellen op welke dag je de activiteit wilt doen.` },
+        { icon: icons.users,
+          title: 'Stemmen',
+          content: `Stel een activiteit voor via de dag-knoppen op een suggestie, of via <strong>+ Activiteit voorstellen</strong> op een dag-tab. ${acceptanceText.nl} Als iemand afwijst (bij unaniem), wordt het voorstel afgewezen. Je kunt je stem herroepen, en als voorsteller kun je het voorstel <strong>intrekken</strong>.` },
+        { icon: icons.note,
+          title: 'Agenda & Notities',
+          content: 'Bevestigde activiteiten verschijnen in de <strong>Agenda</strong> sectie van elke dag. Klik op een agenda-item voor details. Daar kun je notities toevoegen (bijv. reserveringstijden, tips). Met het kalender-icoontje exporteer je de activiteit naar je telefoon-agenda.' },
+        { icon: icons.compass,
+          title: 'Vervoer',
+          content: 'Het tabblad <strong>Vervoer</strong> toont de afstand van het hotel naar elke activiteit. Je ziet loop- en rijtijden met een aanbeveling (lopen of Uber). Klik op <strong>Route in Google Maps</strong> voor de exacte route. Onderaan zie je welke activiteiten dicht bij elkaar liggen en gecombineerd kunnen worden.' },
     ];
 
     document.getElementById('help-body').innerHTML = sections.map(s => `
@@ -498,30 +874,502 @@ function dismissTip(key) {
     if (el) el.remove();
 }
 
-// Auto-login
-const savedUser = localStorage.getItem('madrid-user');
-if (savedUser && PARTICIPANTS.includes(savedUser)) {
-    currentUser = savedUser;
-    showApp();
+/* ---------- Landing screen ---------- */
+function showLanding() {
+    setActiveScreen('landing-screen');
+    renderLandingRecent();
 }
 
-/* ---------- Tabs ---------- */
-document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        tab.classList.add('active');
-        document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+function renderLandingRecent() {
+    const list = document.getElementById('landing-recent-list');
+    const wrap = document.getElementById('landing-recent');
+    if (!list || !wrap) return;
+    const items = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('trip-code-')) {
+            const slug = key.slice('trip-code-'.length);
+            items.push(slug);
+        }
+    }
+    if (!items.length) { wrap.style.display = 'none'; return; }
+    wrap.style.display = 'block';
+    list.innerHTML = items.map(slug =>
+        `<a href="/t/${slug}">${slug.replace(/-/g, ' ')}</a>`
+    ).join('');
+}
+
+document.getElementById('landing-open-form')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const raw = document.getElementById('landing-trip-input').value.trim();
+    if (!raw) return;
+    const m = raw.match(/\/t\/([a-z0-9-]+)/i);
+    let slug = m ? m[1] : raw.replace(/^\/+|\/+$/g, '');
+    if (!/^[a-z0-9-]+$/i.test(slug)) {
+        showToast('Ongeldige trip-naam.');
+        return;
+    }
+    window.location.href = `/t/${slug}`;
+});
+
+/* ---------- New trip form ---------- */
+let newTripFormInitialized = false;
+let newTripParticipantCount = 0;
+let pendingNewTripName = null;
+
+function showNewTrip() {
+    setActiveScreen('new-trip-screen');
+    initNewTripForm();
+}
+
+function addParticipantRow(initial = {}) {
+    if (newTripParticipantCount >= 12) return;
+    const idx = newTripParticipantCount;
+    newTripParticipantCount++;
+    const color = NEW_TRIP_PALETTE[idx % NEW_TRIP_PALETTE.length];
+    const row = document.createElement('div');
+    row.className = 'nt-participant-row';
+    row.dataset.idx = String(idx);
+    row.innerHTML = `
+        <span class="nt-color-dot" style="background:${color}"></span>
+        <input type="text" class="nt-name" maxlength="30" placeholder="${idx === 0 ? 'Jouw naam (eigenaar)' : 'Naam'}" value="${esc(initial.name || '')}" ${idx === 0 ? 'readonly' : 'required'}>
+        <select class="nt-lang" title="Taalvoorkeur">
+            <option value="">— taal —</option>
+            <option value="nl">NL</option>
+            <option value="en">EN</option>
+            <option value="es">ES</option>
+        </select>
+        <button type="button" class="nt-remove" title="Verwijder" ${idx === 0 ? 'style="visibility:hidden"' : ''}>×</button>
+    `;
+    row.querySelector('.nt-remove').addEventListener('click', () => {
+        if (newTripParticipantCount <= 2) return;
+        row.remove();
+        newTripParticipantCount--;
+        recolorParticipantRows();
+    });
+    document.getElementById('nt-participants').appendChild(row);
+}
+
+function recolorParticipantRows() {
+    document.querySelectorAll('.nt-participant-row').forEach((row, i) => {
+        row.querySelector('.nt-color-dot').style.background = NEW_TRIP_PALETTE[i % NEW_TRIP_PALETTE.length];
+        row.dataset.idx = String(i);
+    });
+}
+
+function initNewTripForm() {
+    if (newTripFormInitialized) return;
+    newTripFormInitialized = true;
+
+    addParticipantRow();
+    addParticipantRow();
+
+    const ownerInput = document.getElementById('nt-owner');
+    ownerInput.addEventListener('input', () => {
+        const firstNameInput = document.querySelector('.nt-participant-row .nt-name');
+        if (firstNameInput) firstNameInput.value = ownerInput.value;
+    });
+
+    document.getElementById('nt-add-participant').addEventListener('click', () => {
+        if (newTripParticipantCount >= 12) {
+            showToast('Maximaal 12 deelnemers.');
+            return;
+        }
+        addParticipantRow();
+    });
+
+    document.getElementById('new-trip-form').addEventListener('submit', handleNewTripSubmit);
+}
+
+function handleNewTripSubmit(e) {
+    e.preventDefault();
+    const errEl = document.getElementById('nt-error');
+    errEl.style.display = 'none';
+
+    const ownerName = document.getElementById('nt-owner').value.trim();
+    const tripName = document.getElementById('nt-name').value.trim();
+    const flag = document.getElementById('nt-flag').value.trim();
+    const start = document.getElementById('nt-start').value;
+    const end = document.getElementById('nt-end').value;
+    const language = document.getElementById('nt-language').value;
+    const voting = document.getElementById('nt-voting').value;
+    const hotelName = document.getElementById('nt-hotel-name').value.trim();
+    const hotelAddress = document.getElementById('nt-hotel-address').value.trim();
+
+    const fail = (msg) => { errEl.textContent = msg; errEl.style.display = 'block'; };
+
+    if (!ownerName) return fail('Vul je naam in.');
+    if (!tripName) return fail('Vul een trip-naam in.');
+    if (!flag) return fail('Kies een vlag/emoji.');
+    if (!start || !end) return fail('Kies start- en einddatum.');
+
+    const startD = new Date(start + 'T12:00:00');
+    const endD = new Date(end + 'T12:00:00');
+    if (endD < startD) return fail('Einddatum mag niet vóór startdatum.');
+    const dayCount = Math.round((endD - startD) / 86400000) + 1;
+    if (dayCount > 14) return fail('Maximaal 14 dagen.');
+
+    const rows = Array.from(document.querySelectorAll('.nt-participant-row'));
+    const participants = rows.map((row, i) => {
+        const name = i === 0 ? ownerName : row.querySelector('.nt-name').value.trim();
+        const lang = row.querySelector('.nt-lang').value;
+        const obj = { name };
+        if (lang) obj.language = lang;
+        return obj;
+    });
+    if (participants.length < 2) return fail('Minimaal 2 deelnemers.');
+    if (participants.some(p => !p.name)) return fail('Vul alle deelnemer-namen in.');
+    const lower = participants.map(p => p.name.toLowerCase());
+    if (new Set(lower).size !== lower.length) return fail('Geen dubbele namen toegestaan.');
+
+    const payload = {
+        action: 'create_trip',
+        name: tripName,
+        flag,
+        start_date: start,
+        end_date: end,
+        language,
+        voting_rule: voting,
+        participants,
+    };
+    if (hotelName || hotelAddress) {
+        payload.hotel = { name: hotelName, address: hotelAddress };
+    }
+
+    pendingNewTripName = tripName;
+    sendRaw(payload);
+}
+
+function handleTripCreated(msg) {
+    if (!pendingNewTripName) return;
+    const slug = msg.trip_id;
+    const code = msg.code;
+    const ownerName = document.getElementById('nt-owner').value.trim();
+    localStorage.setItem(`trip-code-${slug}`, code);
+    if (ownerName) localStorage.setItem(`trip-user-${slug}`, ownerName);
+    showCreated(pendingNewTripName, slug, code);
+    pendingNewTripName = null;
+}
+
+function showCreated(name, slug, code) {
+    setActiveScreen('created-screen');
+    document.getElementById('created-trip-name').textContent = name;
+    const url = `${window.location.origin}/t/${slug}`;
+    document.getElementById('created-url').textContent = url;
+    document.getElementById('created-code').textContent = code;
+    document.getElementById('created-copy').onclick = async () => {
+        try {
+            await navigator.clipboard.writeText(`${url}\nCode: ${code}`);
+            showToast('Gekopieerd!');
+        } catch {
+            showToast('Kopiëren mislukt — selecteer handmatig.');
+        }
+    };
+    document.getElementById('created-open').onclick = () => {
+        window.location.href = `/t/${slug}`;
+    };
+}
+
+/* ---------- Language popover (per participant) ---------- */
+function refreshLangPopoverActive() {
+    const popover = document.getElementById('lang-popover');
+    if (!popover || !appState) return;
+    const me = appState.participants?.find(p => p.name === currentUser);
+    const myLang = me?.language || '';
+    popover.querySelectorAll('.lang-option').forEach(btn => {
+        btn.classList.toggle('active', (btn.dataset.lang || '') === myLang);
+    });
+}
+
+document.getElementById('current-user-badge')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const popover = document.getElementById('lang-popover');
+    if (!popover) return;
+    const isOpen = popover.style.display !== 'none';
+    popover.style.display = isOpen ? 'none' : 'flex';
+    if (!isOpen) refreshLangPopoverActive();
+});
+
+document.addEventListener('click', (e) => {
+    const popover = document.getElementById('lang-popover');
+    if (!popover || popover.style.display === 'none') return;
+    if (e.target.closest('#lang-popover') || e.target.closest('#current-user-badge')) return;
+    popover.style.display = 'none';
+});
+
+document.querySelectorAll('#lang-popover .lang-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const lang = btn.dataset.lang || '';
+        send({ action: 'set_my_language', language: lang });
+        document.getElementById('lang-popover').style.display = 'none';
     });
 });
 
+/* ---------- Settings (owner only) ---------- */
+function openSettings() {
+    if (!appState || currentUser !== appState.owner) return;
+    document.getElementById('set-name').value = appState.name || '';
+    document.getElementById('set-flag').value = appState.flag || '';
+    document.getElementById('set-language').value = appState.language || 'nl';
+    document.getElementById('set-voting').value = appState.voting_rule || 'unanimous';
+    document.getElementById('set-hotel-name').value = appState.hotel?.name || '';
+    document.getElementById('set-hotel-address').value = appState.hotel?.address || '';
+    document.getElementById('set-start').value = appState.start_date || '';
+    document.getElementById('set-end').value = appState.end_date || '';
+    document.getElementById('set-current-code').textContent = appState.code || '';
+    document.getElementById('set-delete-confirm').value = '';
+    document.getElementById('set-delete-trip').disabled = true;
+    document.getElementById('set-error').style.display = 'none';
+    renderSettingsParticipants();
+    document.getElementById('settings-modal').classList.add('active');
+}
+
+function closeSettings() {
+    document.getElementById('settings-modal').classList.remove('active');
+}
+
+function renderSettingsParticipants() {
+    const list = document.getElementById('set-participants-list');
+    if (!list || !appState) return;
+    list.innerHTML = (appState.participants || []).map(p => {
+        const isOwner = p.name === appState.owner;
+        return `
+            <div class="set-participant-row" data-name="${esc(p.name)}">
+                <span class="nt-color-dot" style="background:${p.color || '#888'}"></span>
+                <span class="set-participant-name">${esc(p.name)}</span>
+                ${isOwner ? '<span class="set-owner-badge">Owner</span>' : '<button type="button" class="set-remove-participant" title="Verwijder">×</button>'}
+            </div>
+        `;
+    }).join('');
+    list.querySelectorAll('.set-remove-participant').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const row = btn.closest('.set-participant-row');
+            const name = row.dataset.name;
+            if (confirm(`Deelnemer "${name}" verwijderen? Open voorstellen waar deze persoon proposer was worden ingetrokken. Suggesties blijven staan.`)) {
+                send({ action: 'remove_participant', name });
+            }
+        });
+    });
+}
+
+function showSettingsError(text) {
+    const err = document.getElementById('set-error');
+    err.textContent = text;
+    err.style.display = 'block';
+}
+
+document.getElementById('settings-btn')?.addEventListener('click', openSettings);
+document.getElementById('close-settings')?.addEventListener('click', closeSettings);
+
+document.getElementById('set-save-metadata')?.addEventListener('click', () => {
+    const name = document.getElementById('set-name').value.trim();
+    const flag = document.getElementById('set-flag').value.trim();
+    const language = document.getElementById('set-language').value;
+    const voting_rule = document.getElementById('set-voting').value;
+    const hotelName = document.getElementById('set-hotel-name').value.trim();
+    const hotelAddress = document.getElementById('set-hotel-address').value.trim();
+    if (!name) return showSettingsError('Trip-naam mag niet leeg zijn.');
+    if (!flag) return showSettingsError('Vlag mag niet leeg zijn.');
+    const payload = { action: 'update_trip_metadata', name, flag, language, voting_rule };
+    payload.hotel = (hotelName || hotelAddress) ? { name: hotelName, address: hotelAddress } : null;
+    send(payload);
+    showToast('Algemene instellingen opgeslagen.');
+});
+
+document.getElementById('set-save-dates')?.addEventListener('click', () => {
+    const start = document.getElementById('set-start').value;
+    const end = document.getElementById('set-end').value;
+    if (!start || !end) return showSettingsError('Vul beide datums in.');
+    send({ action: 'update_trip_dates', start_date: start, end_date: end });
+});
+
+document.getElementById('set-add-participant')?.addEventListener('click', () => {
+    const input = document.getElementById('set-new-participant');
+    const name = input.value.trim();
+    if (!name) return;
+    send({ action: 'add_participant', name });
+    input.value = '';
+});
+
+document.getElementById('set-regen-code')?.addEventListener('click', () => {
+    if (!confirm('Nieuwe code genereren? Andere deelnemers moeten daarna opnieuw inloggen.')) return;
+    send({ action: 'regenerate_code' });
+});
+
+document.getElementById('set-delete-confirm')?.addEventListener('input', (e) => {
+    document.getElementById('set-delete-trip').disabled = (e.target.value !== appState?.name);
+});
+
+document.getElementById('set-delete-trip')?.addEventListener('click', () => {
+    const name = document.getElementById('set-delete-confirm').value;
+    if (name !== appState?.name) return;
+    if (!confirm(`Weet je het zeker? "${name}" wordt definitief verwijderd.`)) return;
+    send({ action: 'delete_trip', confirm_name: name });
+});
+
+function handleCodeRegenerated(msg) {
+    currentCode = msg.code;
+    localStorage.setItem(CODE_KEY, currentCode);
+    document.getElementById('set-current-code').textContent = currentCode;
+    showToast('Nieuwe code: ' + currentCode);
+}
+
+function handleTripDeleted() {
+    if (USER_KEY) localStorage.removeItem(USER_KEY);
+    if (CODE_KEY) localStorage.removeItem(CODE_KEY);
+    showToast('Trip verwijderd.');
+    setTimeout(() => { window.location.href = '/'; }, 600);
+}
+
+// Boot
+if (ROUTE === 'landing') {
+    showLanding();
+} else if (ROUTE === 'new') {
+    showNewTrip();
+    connect();
+} else {
+    document.getElementById('code-trip-label').textContent = CURRENT_TRIP_ID.replace(/-/g, ' ').toUpperCase();
+    const savedUser = localStorage.getItem(USER_KEY);
+    if (savedUser) {
+        currentUser = savedUser;
+    }
+    if (!currentCode) {
+        showCodeScreen();
+    } else {
+        connect();
+        if (currentUser) {
+            showApp();
+        } else {
+            showLogin();
+        }
+    }
+}
+
+/* ---------- Tabs (event delegation, works with dynamic tabs) ---------- */
+document.addEventListener('click', (e) => {
+    const tab = e.target.closest('.tab');
+    if (!tab || !document.getElementById('tabs-nav')?.contains(tab)) return;
+    document.querySelectorAll('#tabs-nav .tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    const target = document.getElementById(`tab-${tab.dataset.tab}`);
+    if (target) target.classList.add('active');
+});
+
 /* ---------- Render ---------- */
+function renderTripChrome() {
+    if (!appState) return;
+    document.title = appState.name || 'Trip';
+    const headerName = document.getElementById('header-name');
+    const headerFlag = document.getElementById('header-flag');
+    if (headerName) headerName.textContent = appState.name;
+    if (headerFlag) headerFlag.textContent = appState.flag;
+
+    const settingsBtn = document.getElementById('settings-btn');
+    if (settingsBtn) {
+        settingsBtn.style.display = (currentUser && currentUser === appState.owner) ? '' : 'none';
+    }
+
+    refreshDays();
+    ensureDayTabs();
+    renderLegend();
+    renderLoginScreen();
+    applyStaticTranslations();
+    refreshLangPopoverActive();
+
+    const archived = isArchived();
+    document.body.classList.toggle('archived', archived);
+    const banner = document.getElementById('archived-banner');
+    if (banner) banner.style.display = archived ? 'flex' : 'none';
+}
+
+function ensureDayTabs() {
+    const nav = document.getElementById('tabs-nav');
+    if (!nav) return;
+    // Remember which tab was active so we don't bounce the user back to "Suggesties"
+    // on every state update.
+    const activeTabId = nav.querySelector('.tab.active')?.dataset.tab;
+    nav.querySelectorAll('.tab[data-day-tab]').forEach(t => t.remove());
+    const container = document.getElementById('day-tabs-container');
+    if (container) {
+        container.querySelectorAll('.tab-content.day-tab').forEach(d => d.remove());
+    }
+    DAYS.forEach((day) => {
+        const btn = document.createElement('button');
+        btn.className = 'tab' + (day.tabId === activeTabId ? ' active' : '');
+        btn.dataset.tab = day.tabId;
+        btn.dataset.dayTab = '1';
+        btn.innerHTML = `<span class="tab-date">${esc(day.short)}</span><span>${esc(t('day_label_short', 'Dag') + ' ' + day.num)}</span>`;
+        nav.appendChild(btn);
+        if (container) {
+            const div = document.createElement('div');
+            div.id = `tab-${day.tabId}`;
+            div.className = 'tab-content day-tab' + (day.tabId === activeTabId ? ' active' : '');
+            div.dataset.day = day.key;
+            container.appendChild(div);
+        }
+    });
+    // If the previously active tab was a day-tab that no longer exists (date range shrunk),
+    // make sure something is active so the user isn't on a blank screen.
+    if (!nav.querySelector('.tab.active')) {
+        nav.querySelector('.tab[data-tab="suggestions"]')?.classList.add('active');
+        document.getElementById('tab-suggestions')?.classList.add('active');
+    }
+}
+
+function renderLegend() {
+    const legend = document.getElementById('legend');
+    if (!legend || !appState) return;
+    legend.innerHTML = (appState.participants || []).map(p =>
+        `<span class="legend-item" style="--dot-color: ${p.color || '#888'}">${esc(p.name)}</span>`
+    ).join('');
+}
+
+function renderLoginScreen() {
+    const buttons = document.getElementById('user-buttons');
+    if (!buttons || !appState) return;
+    const label = document.getElementById('login-trip-label');
+    const name = document.getElementById('login-trip-name');
+    const flag = document.getElementById('login-flag');
+    const dates = document.getElementById('login-dates');
+    if (label) label.textContent = (appState.name || '').toUpperCase();
+    if (name) name.textContent = appState.name || '';
+    if (flag) flag.textContent = appState.flag || '☀️';
+    if (dates && DAYS.length) {
+        const first = DAYS[0];
+        const last = DAYS[DAYS.length - 1];
+        const firstDate = new Date(first.key + 'T12:00:00');
+        const lastDate = new Date(last.key + 'T12:00:00');
+        const months = dayMonthNames().months;
+        const firstMonth = firstDate.getMonth();
+        const lastMonth = lastDate.getMonth();
+        if (first.key === last.key) {
+            dates.textContent = `${firstDate.getDate()} ${months[lastMonth]}`;
+        } else if (firstMonth === lastMonth) {
+            dates.textContent = `${firstDate.getDate()} - ${lastDate.getDate()} ${months[lastMonth]}`;
+        } else {
+            dates.textContent = `${firstDate.getDate()} ${months[firstMonth]} - ${lastDate.getDate()} ${months[lastMonth]}`;
+        }
+    }
+    buttons.innerHTML = (appState.participants || []).map(p => {
+        const color = p.color || '#888';
+        return `<button class="user-btn" data-user="${esc(p.name)}" style="--user-color: ${color}">${esc(p.name)}</button>`;
+    }).join('');
+    buttons.querySelectorAll('.user-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            currentUser = btn.dataset.user;
+            localStorage.setItem(USER_KEY, currentUser);
+            showApp();
+        });
+    });
+}
+
 function render() {
     if (!appState) return;
+    renderTripChrome();
     renderSuggestions();
     renderTransport();
     DAYS.forEach((day, i) => renderDay(day, i));
-    // Refresh detail modal if open
     if (openDetailDayKey && openDetailSuggestionId) {
         renderDetailBody(openDetailDayKey, openDetailSuggestionId);
     }
@@ -560,10 +1408,16 @@ function renderSuggestions() {
     if (suggestions.length === 0) {
         list.innerHTML = '';
         empty.style.display = 'block';
+        const tripName = appState?.name || (viewerLanguage() === 'en' ? 'this trip' : viewerLanguage() === 'es' ? 'este viaje' : 'deze trip');
+        const subtitle = viewerLanguage() === 'en'
+            ? `Click the button above to propose an activity you'd like to do during ${tripName}.`
+            : viewerLanguage() === 'es'
+                ? `Pulsa el botón de arriba para proponer una actividad que te gustaría hacer en ${tripName}.`
+                : `Klik op de knop hierboven om een activiteit voor te stellen die je graag wilt doen tijdens ${tripName}.`;
         empty.innerHTML = `
             <div class="empty-illustration">${icons.lightbulb}</div>
             <p class="empty-title">${t('no_suggestions_title', 'Nog geen suggesties')}</p>
-            <p class="empty-subtitle">${t('no_suggestions_subtitle', 'Klik op de knop hierboven om een activiteit voor te stellen die je graag wilt doen in Madrid.')}</p>
+            <p class="empty-subtitle">${subtitle}</p>
         `;
         return;
     }
@@ -572,8 +1426,8 @@ function renderSuggestions() {
     const tip = renderTip('suggestions', t('tip_suggestions', 'Iedereen kan suggesties toevoegen. Jouw suggesties kun je bewerken of verwijderen.'));
     list.innerHTML = tip + suggestions.map(s => {
         const ts = tSuggestion(s);
-        const color = COLORS[s.author] || '#888';
-        const initial = INITIALS[s.author] || '?';
+        const color = colorFor(s.author);
+        const initial = initialFor(s.author);
         return `
         <div class="suggestion-card" style="--card-color: ${color}">
             <div class="card-header">
@@ -683,10 +1537,10 @@ function renderDay(day, index) {
 function renderProposal(p, dayKey) {
     const s = p.suggestion;
     const ts = tSuggestion(s);
-    const color = COLORS[s.author] || '#888';
+    const color = colorFor(s.author);
     const isRejected = p.status === 'rejected';
 
-    let votesHtml = PARTICIPANTS.map(name => {
+    let votesHtml = tripParticipantNames().map(name => {
         const vote = p.votes[name];
         let cls = 'pending';
         let label = '?';
@@ -800,8 +1654,8 @@ function renderDetailBody(dayKey, suggestionId) {
     if (!item) return;
 
     const ta = tSuggestion(item);
-    const color = COLORS[item.author] || '#888';
-    const initial = INITIALS[item.author] || '?';
+    const color = colorFor(item.author);
+    const initial = initialFor(item.author);
     const notes = (dayData.notes && dayData.notes[String(suggestionId)]) || [];
     const isAuthor = currentUser === item.author;
 
@@ -838,8 +1692,8 @@ function renderDetailBody(dayKey, suggestionId) {
         html += `<p class="notes-empty">${t('no_notes', 'Nog geen aantekeningen. Voeg er een toe!')}</p>`;
     } else {
         html += notes.map(n => {
-            const noteColor = COLORS[n.author] || '#888';
-            const noteInitial = INITIALS[n.author] || '?';
+            const noteColor = colorFor(n.author);
+            const noteInitial = initialFor(n.author);
             const timeStr = formatNoteTime(n.created);
             return `
             <div class="note-item">
@@ -962,7 +1816,13 @@ async function geocodeLocation(locationStr) {
         return appState.geocache[locationStr];
     }
     let query = locationStr;
-    if (!query.toLowerCase().includes('madrid')) query += ', Madrid, Spain';
+    // Use the trip's hotel address as a geocoding hint to disambiguate ("Centraal Station"
+    // could be in many cities). Falls back to Madrid for the legacy Madrid trip.
+    const hint = appState?.hotel?.address
+        || (CURRENT_TRIP_ID === 'madrid-2026' ? 'Madrid, Spain' : null);
+    if (hint && !query.toLowerCase().includes(hint.toLowerCase().split(',')[0])) {
+        query += ', ' + hint;
+    }
     try {
         const resp = await fetch(`${NOMINATIM_URL}?q=${encodeURIComponent(query)}&format=json&limit=1`);
         const data = await resp.json();
@@ -999,7 +1859,30 @@ function queueGeocode(loc) {
     });
 }
 
+/**
+ * Returns the hotels for the current trip:
+ * - Madrid keeps its hardcoded 2-hotel layout (legacy, with day-assignments)
+ * - Other trips use appState.hotel as a single hotel covering all days
+ * - No hotel set → returns []
+ */
+function tripHotels() {
+    if (CURRENT_TRIP_ID === 'madrid-2026') return HOTELS;
+    if (appState?.hotel?.address) {
+        const cached = appState.geocache?.[appState.hotel.address];
+        return [{
+            name: appState.hotel.name || t('hotel_label', 'Hotel'),
+            address: appState.hotel.address,
+            lat: cached?.lat ?? null,
+            lng: cached?.lng ?? null,
+            days: DAYS.map(d => d.key),
+        }];
+    }
+    return [];
+}
+
 function getHotelsForSuggestion(s) {
+    const all = tripHotels();
+    if (all.length === 0) return [];
     const assignedDays = [];
     for (const day of DAYS) {
         const dd = appState.days[day.key];
@@ -1008,18 +1891,18 @@ function getHotelsForSuggestion(s) {
             assignedDays.push(day.key);
         }
     }
-    if (assignedDays.length === 0) return HOTELS;
+    if (assignedDays.length === 0) return all;
     const seen = new Set();
     const hotels = [];
     for (const dk of assignedDays) {
-        for (const h of HOTELS) {
+        for (const h of all) {
             if (h.days.includes(dk) && !seen.has(h.name)) {
                 seen.add(h.name);
                 hotels.push(h);
             }
         }
     }
-    return hotels.length > 0 ? hotels : HOTELS;
+    return hotels.length > 0 ? hotels : all;
 }
 
 function isVagueLocation(loc) {
@@ -1042,8 +1925,22 @@ function renderTransport() {
     const clustersEl = document.getElementById('transport-clusters');
     if (!hotelsEl) return;
 
+    const hotels = tripHotels();
+
+    if (hotels.length === 0) {
+        hotelsEl.innerHTML = `<div class="empty-state"><p>${t('no_hotel_set', 'Geen hotel ingesteld voor deze trip. Voeg een hotel toe via trip-instellingen om afstanden te zien.')}</p></div>`;
+        listEl.innerHTML = '';
+        clustersEl.innerHTML = '';
+        return;
+    }
+
+    // Trigger geocoding for hotels that don't yet have coordinates.
+    for (const h of hotels) {
+        if (h.lat == null && h.address) queueGeocode(h.address).then(() => renderTransport());
+    }
+
     // Hotel cards
-    hotelsEl.innerHTML = HOTELS.map(h => {
+    hotelsEl.innerHTML = hotels.map(h => {
         const dateRange = h.days.map(d => {
             const dayObj = DAYS.find(dd => dd.key === d);
             return dayObj ? dayObj.short : d;
@@ -1080,7 +1977,7 @@ function renderTransport() {
     listEl.innerHTML = '<h3>' + t('transport_title', 'Transport & Afstanden') + '</h3>' +
         geocoded.map(({ suggestion: s, coords }) => {
         const ts = tSuggestion(s);
-        const color = COLORS[s.author] || '#888';
+        const color = colorFor(s.author);
         const hotels = getHotelsForSuggestion(s);
 
         const vague = isVagueLocation(s.location);
@@ -1097,6 +1994,12 @@ function renderTransport() {
         }
 
         const hotelRows = hotels.map(h => {
+            if (h.lat == null || h.lng == null) {
+                return `<div class="hotel-distance">
+                    <span class="hotel-distance-name">${esc(h.name)}</span>
+                    <div class="distance-details"><span class="transport-loading"><span class="spinner"></span> ${t('geocoding', 'Locatie opzoeken...')}</span></div>
+                </div>`;
+            }
             const info = getDistanceInfo(h.lat, h.lng, coords.lat, coords.lng);
             const recEmoji = info.rec === 'walk' ? '\uD83D\uDEB6' : '\uD83D\uDE97';
             const recText = info.rec === 'walk' ? t('rec_walk', 'Lopen') : t('rec_uber', 'Uber/taxi');
@@ -1150,7 +2053,7 @@ function renderClusters(items, container) {
         clusters.map((cluster, ci) => {
             const chips = cluster.map(({ suggestion: s }) => {
                 const ts = tSuggestion(s);
-                const color = COLORS[s.author] || '#888';
+                const color = colorFor(s.author);
                 return `<span class="cluster-chip" style="--chip-color: ${color}">${esc(ts.title)}</span>`;
             }).join('');
             let maxDist = 0;
@@ -1277,7 +2180,7 @@ function openDayAddModal(dayKey) {
     } else {
         list.innerHTML = available.map(s => {
             const ts = tSuggestion(s);
-            const color = COLORS[s.author] || '#888';
+            const color = colorFor(s.author);
             return `
             <div class="day-add-item" style="--card-color: ${color}" onclick="proposeForDay(${s.id})">
                 <div class="item-info">
