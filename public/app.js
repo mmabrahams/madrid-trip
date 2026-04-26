@@ -751,7 +751,7 @@ function showApp() {
     const helpKey = `help-seen-${CURRENT_TRIP_ID}`;
     if (!localStorage.getItem(helpKey)) {
         localStorage.setItem(helpKey, '1');
-        setTimeout(() => { renderHelp(); document.getElementById('help-modal').classList.add('active'); }, 600);
+        setTimeout(() => { renderWelcome(); document.getElementById('help-modal').classList.add('active'); }, 600);
     }
 }
 
@@ -773,12 +773,77 @@ document.getElementById('code-form').addEventListener('submit', (e) => {
 /* ---------- Help Modal ---------- */
 document.getElementById('help-btn').addEventListener('click', () => {
     renderHelp();
+    const closeBtn = document.getElementById('close-help');
+    if (closeBtn) closeBtn.textContent = t('btn_close', 'Sluiten');
     document.getElementById('help-modal').classList.add('active');
 });
 
 document.getElementById('close-help').addEventListener('click', () => {
     document.getElementById('help-modal').classList.remove('active');
 });
+
+function renderWelcome() {
+    const tripName = appState?.name || (viewerLanguage() === 'en' ? 'this trip' : viewerLanguage() === 'es' ? 'este viaje' : 'deze trip');
+    const lang = viewerLanguage();
+    const labels = lang === 'es' ? {
+        welcome: 'Bienvenido a',
+        tagline: 'Tres pasos simples para planificar juntos.',
+        steps: [
+            { title: 'Sugerir',    desc: 'Todos añaden actividades a la lista.' },
+            { title: 'Votar',      desc: 'Propone una actividad para un día — todos votan.' },
+            { title: 'Planificar', desc: 'Las actividades confirmadas aparecen en la agenda del día.' },
+        ],
+        more: 'Más detalles',
+        cta: 'Empezar',
+    } : lang === 'en' ? {
+        welcome: 'Welcome to',
+        tagline: 'Three simple steps to plan together.',
+        steps: [
+            { title: 'Suggest', desc: 'Everyone adds activities to the list.' },
+            { title: 'Vote',    desc: "Propose an activity for a day — everyone votes." },
+            { title: 'Plan',    desc: "Confirmed activities show in that day's agenda." },
+        ],
+        more: 'More details',
+        cta: "Let's go",
+    } : {
+        welcome: 'Welkom bij',
+        tagline: 'Drie simpele stappen om samen te plannen.',
+        steps: [
+            { title: 'Voorstellen', desc: 'Iedereen voegt activiteiten toe aan de lijst.' },
+            { title: 'Stemmen',     desc: 'Stel een activiteit voor op een dag — iedereen stemt.' },
+            { title: 'Plannen',     desc: 'Bevestigde activiteiten staan in de agenda van die dag.' },
+        ],
+        more: 'Meer uitleg',
+        cta: 'Aan de slag',
+    };
+    const stepIcons = [icons.layers, icons.users, icons.calendar];
+    document.getElementById('help-body').innerHTML = `
+        <div class="welcome-card">
+            <div class="welcome-hero-icon">${icons.lightbulb}</div>
+            <h2 class="welcome-title">${labels.welcome} <span class="welcome-trip-name">${esc(tripName)}</span></h2>
+            <p class="welcome-tagline">${labels.tagline}</p>
+            <ol class="welcome-steps">
+                ${labels.steps.map((s, i) => `
+                    <li class="welcome-step">
+                        <span class="welcome-step-num">${i + 1}</span>
+                        <span class="welcome-step-icon">${stepIcons[i]}</span>
+                        <div class="welcome-step-text">
+                            <h3>${esc(s.title)}</h3>
+                            <p>${esc(s.desc)}</p>
+                        </div>
+                    </li>
+                `).join('')}
+            </ol>
+            <button type="button" class="welcome-more-link" id="welcome-more">${esc(labels.more)} →</button>
+        </div>
+    `;
+    const closeBtn = document.getElementById('close-help');
+    if (closeBtn) closeBtn.textContent = labels.cta;
+    document.getElementById('welcome-more').addEventListener('click', () => {
+        renderHelp();
+        if (closeBtn) closeBtn.textContent = t('btn_close', 'Sluiten');
+    });
+}
 
 function renderHelp() {
     const tripName = appState?.name || 'Trip';

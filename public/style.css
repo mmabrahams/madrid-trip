@@ -1987,6 +1987,97 @@ header h1 {
     font-size: 1.4rem;
 }
 
+/* ---------- Welcome card (compact onboarding) ---------- */
+.welcome-card {
+    text-align: center;
+    padding: 0.5rem 0 0.25rem;
+}
+.welcome-hero-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    margin: 0 auto 1rem;
+    background: var(--terracotta);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.welcome-hero-icon svg { width: 30px; height: 30px; }
+.welcome-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 0.4rem;
+    line-height: 1.2;
+}
+.welcome-trip-name { color: var(--terracotta); }
+.welcome-tagline {
+    color: var(--text-light, #777);
+    font-size: 0.95rem;
+    margin: 0 0 1.6rem;
+}
+.welcome-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.5rem;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+.welcome-step {
+    display: grid;
+    grid-template-columns: 28px 36px 1fr;
+    align-items: center;
+    column-gap: 0.85rem;
+    padding: 0.85rem 1rem;
+    background: color-mix(in srgb, var(--terracotta) 5%, white);
+    border: 1px solid color-mix(in srgb, var(--terracotta) 12%, transparent);
+    border-radius: 14px;
+}
+.welcome-step-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--terracotta);
+    color: white;
+    font-weight: 700;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.welcome-step-icon {
+    color: var(--terracotta);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.welcome-step-icon svg { width: 22px; height: 22px; }
+.welcome-step-text h3 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0 0 0.15rem;
+}
+.welcome-step-text p {
+    margin: 0;
+    color: var(--text-light, #777);
+    font-size: 0.88rem;
+    line-height: 1.4;
+}
+.welcome-more-link {
+    background: none;
+    border: none;
+    color: var(--text-light, #999);
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0.4rem 0.6rem;
+    text-decoration: underline;
+}
+.welcome-more-link:hover { color: var(--terracotta); }
+
 /* ---------- Inline Tips ---------- */
 .inline-tip {
     display: flex;
